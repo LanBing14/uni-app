@@ -1,0 +1,208 @@
+<template>
+    <view>
+		<view class="media-item view" v-if="pointsItem">
+		    <view class="view flex-row">
+				<!-- 新闻标题 -->
+				<view class="media-info-box">
+					<text class="media-title media-title3" v-if="pointsItem.type == '0'">登录</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '1'">完善信息</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '2'">签到</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '3'">评论</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '4'">评论加精</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '5'">转发至第三方平台</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '6'">回答问题</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '7'">回答加精</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '8'">发表想法</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '9'">关注专家</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '12'">关注问题</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '10'">邀请朋友</text>
+					<text class="media-title media-title3" v-if="pointsItem.type == '11'">阅读专栏文章</text>
+				    <view class="media-foot flex-row">
+				        <view class="media-info flex-row">
+				            <text class="info-text">{{ pointsItem.createDate | getLocalTime(3) }}</text>
+				        </view>			
+				    	<view class="flex-row views">
+				    		<text class="views-num">{{pointsItem.score}}</text>
+				    	</view>
+				    </view>
+				</view>
+			</view>
+		    <view class="media-item-line" style="position: absolute;"></view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		getLocalTime
+	} from '@/common/js/util.js';
+	
+    export default {
+        props: {
+            pointsItem: {
+                type: Object,
+                default: function(e) {
+                    return {}
+                }
+            }
+        },
+		filters: {
+			getLocalTime
+		},
+		data(){
+			return {
+				imgUrl: '/static/img/demo2.png'
+			}
+		},
+        methods: {
+			
+        }
+    }
+</script>
+
+<style scoped>
+    .view {
+        flex-direction: column;
+    }
+
+    .flex-row {
+        flex-direction: row;
+    }
+
+    .flex-col {
+        flex-direction: column;
+    }
+
+    .list-cell {
+        padding: 0 30rpx;
+    }
+
+    .uni-list-cell-hover {
+        background-color: #eeeeee;
+    }
+
+    .media-item {
+        position: relative;
+        flex: 1;
+        flex-direction: column;
+        padding: 20rpx 30rpx 21rpx 30rpx;
+    }
+
+    .media-item-line {
+        position: absolute;
+        left: 30rpx;
+        right: 30rpx;
+        bottom: 0;
+        height: 1rpx;
+        background-color: #ebebeb;
+    }
+
+    .media-image-right {
+        flex-direction: row;
+    }
+
+    .media-image-left {
+        flex-direction: row-reverse;
+    }
+	
+	.media-info-box {
+        flex: 1;
+		justify-content: space-between;
+	}
+
+    .media-title {
+        flex: 1;
+		margin-bottom: 20rpx;
+        font-size: 30rpx;
+        color: #555555;
+    }
+
+    .media-title2 {
+        lines: 2;
+        text-overflow: ellipsis;
+        line-height: 40rpx;
+    }
+
+    .media-title3 {
+        lines: 3;
+        text-overflow: ellipsis;
+        line-height: 40rpx;
+    }
+
+    .image-section {
+        margin-top: 20rpx;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .image-section-right {
+        margin-top: 0rpx;
+        margin-left: 20rpx;
+        width: 166rpx;
+        height: 166rpx;
+    }
+
+    .image-section-left {
+        margin-top: 0rpx;
+        margin-right: 20rpx;
+        width: 166rpx;
+        height: 166rpx;
+    }
+
+    .image-list1 {
+        width: 690rpx;
+        height: 481rpx;
+		border-radius: 10rpx;
+		overflow: hidden;
+    }
+
+    .image-list2 {
+        width: 166rpx;
+        height: 166rpx;
+		border-radius: 10rpx;
+		overflow: hidden;
+    }
+
+    .image-list3 {
+        width: 166rpx;
+        height: 166rpx;
+		border-radius: 10rpx;
+		overflow: hidden;
+    }
+
+    .media-info {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .info-text {
+        margin-right: 20rpx;
+        color: #999999;
+        font-size: 24rpx;
+    }
+	
+	.info-source {
+		color: #ce0201;
+		border-width: 1rpx;
+		border-style: solid;
+		border-color: #ce0201;
+		border-radius: 10rpx;
+		padding: 0 10rpx;
+	}
+
+    .media-foot {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+	
+	.views {
+		align-items: center;
+	}
+
+	.views-num {
+		margin-left: 10rpx;
+		color: #a3a3a3;
+		font-size: 24rpx;
+	}
+</style>

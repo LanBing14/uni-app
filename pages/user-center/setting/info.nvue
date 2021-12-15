@@ -1,0 +1,199 @@
+<template>
+	<view class="center">
+		<!-- 列表 -->
+		<view class="center-list">
+			<view class="center-list-item border-bottom" @click="goDetail('../user-info/edit-username')">
+				<text class="list-text">用户名</text>
+				<view>
+					<text class="list-rtext">{{userInfo.username}}</text>
+				</view>
+				<view class="navigat-arrow"><uni-icons type="arrowright" color="#bdbdbd"></uni-icons></view>
+			</view>
+			<view class="center-list-item border-bottom" @click="goDetail('change-password')">
+				<text class="list-text">修改密码</text>
+				<view class="navigat-arrow"><uni-icons type="arrowright" color="#bdbdbd"></uni-icons></view>
+			</view>
+			<view class="center-list-item border-bottom" @click="goDetail('change-phone')">
+				<text class="list-text">手机号</text>
+				<view class="navigat-arrow"><uni-icons type="arrowright" color="#bdbdbd"></uni-icons></view>
+			</view>
+		</view>
+		<view class="title">
+			<text style="font-size: 32rpx">第三方账号绑定</text>
+		</view>
+		<view class="center-list">
+			<view class="center-list-item border-bottom">
+				<text class="list-text">微信</text>
+				<text class="words-right"></text>
+				<switch :checked="userInfo.wxStatus" color="#ce0201" @change="saveOpenId($event, 'weixin')" style="transform:scale(0.7); margin-top: 10rpx; margin-right: -18rpx;"/>
+			</view>
+			<view class="center-list-item border-bottom"  >
+				<text class="list-text">微博</text>
+				<text class="words-right"></text>
+				<switch :checked="userInfo.wbStatus" color="#ce0201" @change="saveOpenId($event, 'sinaweibo')" style="transform:scale(0.7); margin-top: 10rpx; margin-right: -18rpx;"/>
+			</view>
+			<view class="center-list-item border-bottom" >
+				<text class="list-text">QQ</text>
+				<text class="words-right"></text>
+				<switch :checked="userInfo.qqStatus" color="#ce0201" @change="saveOpenId($event, 'qq')" style="transform:scale(0.7); margin-top: 10rpx; margin-right: -18rpx;"/>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+    import {
+        Api_GetInfo, Api_SaveOpenId,Api_CloseOpenId
+    } from '@/api/userCenter.js'
+    export default {
+        data() {
+            return {
+                enableWxChange: false,
+                enableWbChange: false,
+                enableQqChange: false,
+                userInfo:{
+                    mobile:''
+                },
+            };
+        },
+        onShow(){
+            Api_GetInfo().then(res=>{
+                if (res.statusCode === 1) {
+                    this.userInfo = res.data
+                    setTimeout(()=> {
+                        this.enableWxChange = true;
+                        this.enableWbChange = true;
+                        this.enableQqChange = true;
+                    }, 500)
+                }
+            })
+        },
+        methods: {
+            saveOpenId(e, logintype) {
+
+                // 如下写法为了解决switch在安卓手机上回显时自动触发change事件的问题
+                if (logintype == "weixin" && !this.enableWxChange) {
+                    return;
+                } else if (logintype == "qq" && !this.enableQqChange) {
+                    return;
+                } else if (logintype == "sinaweibo" && !this.enableWbChange) {
+                    return;
+                }
+
+                if (e.detail.value) {
+                    uni.login({
+                        provider: logintype,
+                        success(loginRes) {
+                            uni.getUserInfo({
+                                provider: logintype,
+                                success(info) {
+                                    var userInfo = info.userInfo;
+                                    var openId;
+                                    var params;
+                                    if (logintype == "weixin") {
+                                        openId = userInfo.openId;
+                                        params = {"openId": openId};
+                                    } else if (logintype == "qq") {
+                                        openId = userInfo.openId;
+                                        params = {"qqOpenId": openId};
+                                    } else if (logintype == "sinaweibo") {
+                                        openId = userInfo.id;
+                                        params = {"wbOpenId": openId};
+                                    }
+
+                                    Api_SaveOpenId(params).then(res => {
+
+                                        if (res.statusCode == 1) {
+                                            uni.showToast({
+                                                title: "授权成功",
+                                                mask: false,
+                                                duration: 1500
+                                            });
+                                        } else {
+                                            uni.showToast({
+                                                title: "授权失败",
+                                                mask: false,
+                                                duration: 1500
+                                            });
+                                        }
+
+                                    }).catch(err => {
+                                        uni.showToast({
+                                            title: "授权失败",
+                                            mask: false,
+                                            duration: 1500
+                                        });
+                                    });
+                                }
+                            });
+                        },
+                        fail(e) {
+                            uni.showToast({
+                                title: "授权失败",
+                                mask: false,
+                                duration: 1500
+                            });
+                        }
+                    });
+                } else {
+                    Api_CloseOpenId({"type": logintype}).then(res => {
+                        uni.showToast({
+                            title: "关闭授权成功",
+                            mask: false,
+                            duration: 1500
+                        });
+                    }).catch(err => {
+                        uni.showToast({
+                            title: "关闭授权失败",
+                            mask: false,
+                            duration: 1500
+                        });
+                    });
+                }
+            },
+            goDetail(link) {
+                uni.navigateTo({
+                    url: link
+                });
+            }
+        }
+    };
+</script>
+
+<style scoped>
+	@import '../../../common/css/uCenter/uCenter.css';
+	.title {
+		width: 750rpx;
+		margin-top: 44rpx;
+		margin-left: 28rpx;
+		color: #000;
+	}
+	.words-right {
+		height: 90rpx;
+		line-height: 90rpx;
+		font-size: 34rpx;
+		color: #555;
+		text-align: right;
+	}
+
+	.list-rtext{
+		height: 90rpx;
+		line-height: 90rpx;
+		font-size: 30rpx;
+		color: #999;
+		flex: 1;
+		lines: 1;
+		width: 400rpx;
+		text-overflow: ellipsis;
+	}
+
+	.logout {
+		margin-top: 290rpx;
+		margin-left: 90rpx;
+		margin-right: 90rpx;
+	}
+	
+	.list-text {
+		width: 100rpx;
+	}
+</style>

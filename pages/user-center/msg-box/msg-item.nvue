@@ -1,0 +1,428 @@
+<template>
+    <view>
+		<view class="media-item view" v-if="msgItem && messageType == '0'">
+		    <view class="view flex-row">
+				<view class="media-info-box" @click="goLink(msgItem.businessId, msgItem.businessType)">
+					<text class="media-title">{{msgItem.title}}</text>
+					<view class="media-info flex-row">
+					    <text class="info-text2">{{msgItem.content}}</text>
+					</view>
+				    <view class="media-foot flex-row">
+				        <view class="media-info flex-row">
+				            <text class="info-text">{{ msgItem.createDate }}</text>
+				        </view>
+				    </view>
+				</view>
+			</view>
+		    <view class="media-item-line" style="position: absolute;"></view>
+		</view>
+		
+		<view class="idea-panel" v-if="msgItem && messageType == '1'">
+			<view class="panel-top" @click="goDetail(msgItem.detailId, msgItem.answerId)">
+				<image class="user-img" :src=" msgItem.byUserHeadPicUrl ? msgItem.byUserHeadPicUrl : '/static/img/demo1.png'" mode=""></image>
+				<view style="margin-right: 5rpx;">
+					<text class="user-name">{{msgItem.username}}</text>
+					<text class="user-time">{{msgItem.publishDate | getLocalTime}}</text>
+				</view>
+				<view>
+					<text class="user-desc" v-if="businessType == '0'">回复了你的评论</text>
+					<text class="user-desc" v-if="businessType == '1'">评论了你的回答</text>
+					<text class="user-desc" v-if="businessType == '2'">评论了你的文章</text>
+					<text class="user-desc" v-if="businessType == '3'">评论了你的想法</text>
+					<text class="user-time"> &nbsp; </text>
+				</view>
+			</view>
+			<view class="panel-content pdB0">
+				<text class="content-title "  @click="goDetail(msgItem.detailId, msgItem.answerId)">{{msgItem.replyContent}}</text>
+				<view class="content-comment pdB0">
+					<view class="comment-item">
+						<text class="item-content">{{msgItem.showContent}}</text>
+						<view class="user-tool">
+							<!-- <view class="tool-comment">
+								<image class="comment-img" src="/static/img/faq/ico1.png" mode=""></image>
+								<text class="praise-count">999</text>
+							</view> -->
+							<view class="tool-praise" @click="like()">
+								<image class="praise-img" :src="msgItem.likeStatus ? '/static/img/faq/ico2-1.png' : '/static/img/faq/ico2.png'" mode=""></image>
+								<text class="praise-count">{{msgItem.likeCount}}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+			<view class="space-line"></view>
+		</view>
+		
+		<view class="idea-panel" v-if="msgItem && messageType == '2'" @click="goDetail(msgItem.detailId, msgItem.answerId)">
+			<view class="panel-top">
+				<image class="user-img" :src=" msgItem.byUserHeadPicUrl ? msgItem.byUserHeadPicUrl : '/static/img/demo1.png'" mode=""></image>
+				<view style="margin-right: 5rpx;">
+					<text class="user-name">{{msgItem.username}}</text>
+					<text class="user-time">{{msgItem.publishDate | getLocalTime}}</text>
+				</view>
+				<view>
+					<text class="user-desc" v-if="businessType == '0'">赞了你的评论</text>
+					<text class="user-desc" v-if="businessType == '1'">赞了你的回答</text>
+					<text class="user-desc" v-if="businessType == '2'">赞了你的文章</text>
+					<text class="user-desc" v-if="businessType == '3'">赞了你的想法</text>
+					<text class="user-time"> &nbsp; </text>
+				</view>
+			</view>
+			<view class="panel-content">
+				<text class="content-title ">{{msgItem.showContent}}</text>
+			</view>
+			<view class="space-line"></view>
+		</view>
+		
+	</view>
+</template>
+
+<script>
+	import {
+		getLocalTime
+	} from '@/common/js/util.js';
+	import { Api_GetLikeSave } from '@/api/faq.js'
+    import {Api_getAppVersion} from '@/api/share.js'
+
+    export default {
+        props: {
+			messageType: {
+				type: String,
+				default: function(e) {
+				    return ''
+				}
+			},
+			businessType: {
+				type: String,
+				default: function(e) {
+				    return ''
+				}
+			},
+            msgItem: {
+                type: Object,
+                default: function(e) {
+                    return {}
+                }
+            }
+        },
+		filters: {
+			getLocalTime
+		},
+		data(){
+			return {
+				imgUrl: '/static/img/demo2.png'
+			}
+		},
+        methods: {
+			goDetail(id, answerId) {
+				if (this.messageType != '0') {
+					var url = '';
+					if (this.businessType == '1') {
+					    // 回答详情页
+						url = '/pages/faq/faq/answer-detail?id=' + answerId;
+					} else if (this.businessType == '2') {
+						url = '/pages/details/details?id=' + id;
+					} else if (this.businessType == '3') {
+						url = '/pages/faq/idea-detail?id=' + id;
+					}
+					if (url) {
+						uni.navigateTo({
+							url: url
+						});
+					}
+				}
+			},
+			goLink(businessId, businessType) {
+
+				if (businessId) {
+					var url = '';
+					// 业务类型  1:回答  2:文章  3:想法  4:栏目(先不做)  5:内容  6:专家  7:著作
+                    if (businessType === '1') {
+                        url = '/pages/faq/faq/answer-detail?id=' + businessId;
+                    } else if (businessType === '2') {
+                        url = '/pages/details/details?id=' + businessId;
+                    } else if (businessType === '3') {
+                        url = '/pages/faq/idea-detail?id=' + businessId;
+                    } else if (businessType === '5') {
+						url = '/pages/details/details?id=' + businessId;
+					} else if (businessType === '6') {
+						url = '/pages/specialist/specialist?expertId=' + businessId;
+					} else if (businessType === '7') {
+						url = '/pages/details/book-detail?id=' + businessId;
+					}
+					if (url) {
+						uni.navigateTo({
+							url: url
+						});
+					}
+				}
+			},
+			like() {
+				Api_GetLikeSave({businessId: this.msgItem.businessId, businessType: '0', userId: this.msgItem.byUserId}).then(res => {
+					if(res.statusCode === 1){
+						this.msgItem.likeStatus = !this.msgItem.likeStatus;
+						this.msgItem.likeCount = res.data;
+					}
+				});
+			},
+        }
+    }
+</script>
+
+<style scoped>
+    .view {
+        flex-direction: column;
+    }
+
+    .flex-row {
+        flex-direction: row;
+    }
+
+    .flex-col {
+        flex-direction: column;
+    }
+
+    .list-cell {
+        padding: 0 30rpx;
+    }
+
+    .uni-list-cell-hover {
+        background-color: #eeeeee;
+    }
+
+    .media-item {
+        position: relative;
+        flex: 1;
+        flex-direction: column;
+        padding: 20rpx 30rpx;
+    }
+	
+	.idea-panel {
+        padding: 20rpx 30rpx;
+	}
+
+    .media-item-line {
+        position: absolute;
+        left: 30rpx;
+        right: 30rpx;
+        bottom: 0;
+        height: 1rpx;
+        background-color: #ebebeb;
+    }
+
+    .media-image-right {
+        flex-direction: row;
+    }
+
+    .media-image-left {
+        flex-direction: row-reverse;
+    }
+	
+	.media-info-box {
+        flex: 1;
+		justify-content: space-between;
+	}
+
+    .media-title {
+        flex: 1;
+		/* margin-bottom: 20rpx; */
+        font-size: 32rpx;
+        line-height: 44rpx;
+        color: #000000;
+    }
+
+    .media-title2 {
+        lines: 2;
+        text-overflow: ellipsis;
+        line-height: 40rpx;
+    }
+
+    .media-title3 {
+        lines: 3;
+        text-overflow: ellipsis;
+        line-height: 40rpx;
+    }
+
+    .image-section {
+        margin-top: 20rpx;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .image-section-right {
+        margin-top: 0rpx;
+        margin-left: 20rpx;
+        width: 166rpx;
+        height: 166rpx;
+    }
+
+    .image-section-left {
+        margin-top: 0rpx;
+        margin-right: 20rpx;
+        width: 166rpx;
+        height: 166rpx;
+    }
+
+    .image-list1 {
+        width: 690rpx;
+        height: 481rpx;
+		border-radius: 10rpx;
+		overflow: hidden;
+    }
+
+    .image-list2 {
+        width: 166rpx;
+        height: 166rpx;
+		border-radius: 10rpx;
+		overflow: hidden;
+    }
+
+    .image-list3 {
+        width: 166rpx;
+        height: 166rpx;
+		border-radius: 10rpx;
+		overflow: hidden;
+    }
+
+    .media-info {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .info-text {
+        margin-right: 20rpx;
+        color: #999999;
+        font-size: 24rpx;
+    }
+	
+	.info-text2 {
+		width: 700rpx;
+		lines: 3;
+		text-overflow: ellipsis;
+	    /* margin-right: 20rpx; */
+	    color: #999999;
+	    font-size: 26rpx;
+		margin-top: 10rpx;
+		margin-bottom: 10rpx;
+	}
+	
+	.info-source {
+		color: #ce0201;
+		border-width: 1rpx;
+		border-style: solid;
+		border-color: #ce0201;
+		border-radius: 10rpx;
+		padding: 0 10rpx;
+	}
+
+    .media-foot {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+	
+	.views {
+		align-items: center;
+	}
+
+	.views-num {
+		margin-left: 10rpx;
+		color: #a3a3a3;
+		font-size: 24rpx;
+	}
+	
+	
+	.pdT0 {
+		padding-top: 0 !important;
+	}
+	.pdB0 {
+		padding-bottom: 0 !important;
+	}
+	.panel-top {
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-start;
+	}
+	.user-img {
+		width: 64rpx;
+		height: 64rpx;
+		margin-right: 16rpx;
+		border-radius: 200rpx;
+	}
+	.user-name {
+		color: #000000;
+		font-size: 30rpx;
+		line-height: 44rpx;
+		lines: 1;
+		text-overflow: ellipsis;
+		width: 500rpx;
+	}
+	.user-desc {
+		font-size: 26rpx;
+		color: #ce0201;
+	}
+	.user-time {
+		color: #999999;
+		font-size: 20rpx;
+	}
+	.user-tool {
+		flex: 1;
+		margin: 10rpx 0;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+	}
+	.tool-praise,
+	.tool-comment,
+	.tool-time{
+		flex-direction: row;
+		align-items: center;
+	}
+	.tool-time{
+		flex: 1;
+	}
+	.praise-img,
+	.comment-img {
+		width: 26rpx;
+		height: 24rpx;
+		margin-right: 10rpx;
+		margin-left: 38rpx;
+	}
+	.praise-count {
+		font-size: 24rpx;
+		color: #999999;
+	}
+	.panel-content {
+		padding-top: 16rpx;
+		padding-bottom: 10rpx;
+	}
+	.content-title {
+		font-size: 26rpx;
+		line-height: 38rpx;
+		color: #787878;
+		lines: 3;
+		text-overflow: ellipsis;
+	}
+	.content-comment{
+		margin-top: 20rpx;
+		padding:30rpx 20rpx;
+		border-radius: 10rpx;
+		background-color: #f7f7f7;
+	}
+	.comment-item{
+		margin-bottom: 8rpx;
+	}
+	.item-content{
+		font-size: 28rpx;
+		color: #4b4b4b;
+		/* line-height: 1.5; */
+		lines: 3;
+		text-overflow: ellipsis;
+	}
+	.space-line {
+		background-color: #f7f7f7;
+		height: 2rpx;
+		width: 710rpx;
+		margin-top: 20rpx;
+	}
+</style>

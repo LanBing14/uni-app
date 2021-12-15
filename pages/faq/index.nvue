@@ -1,0 +1,810 @@
+<template>
+	<view class="faq-page" :style="{bottom: fixHeight}">
+		<!-- #ifdef APP-PLUS -->
+		<view class="status_bar">
+			<view class="top_view"></view>
+		</view>
+		<!-- #endif -->
+
+		<yd-topsearch></yd-topsearch>
+
+		<view class="tabs">
+			<scroll-view id="tab-bar" class="tab-bar" :scroll-x="true" :show-scrollbar="false" :scroll-into-view="scrollInto">
+				<view v-for="(tab,index) in tabList" :key="tab.id" class="uni-tab-item" :id="tab.id" :data-current="index" @click="ontabtap">
+					<text class="uni-tab-item-title" :class="tabIndex==index ? 'uni-tab-item-title-active' : ''">{{ tab.name }}</text>
+				</view>
+				<view id="line" class="line-h" :style="{left: indicatorLineLeft}"></view>
+			</scroll-view>
+
+			<view class="add-btn">
+				<view v-if="tabIndex !== 2" @click="askClick">
+					<image src="/static/img/faq/ask-btn.png" mode="aspectFill" class="btn-img"></image>
+				</view>
+				<view v-if="tabIndex === 2" @click="ideaClick">
+					<image src="/static/img/faq/ans-btn.png" mode="aspectFill" class="btn-img"></image>
+				</view>
+			</view>
+
+			<swiper :current="tabIndex" class="swiper-box" style="flex: 1;" :duration="300" @change="ontabchange">
+				<swiper-item class="swiper-item" v-for="(tab,index1) in newsList" :key="index1">
+					<list class="scroll-v list" loadmoreoffset="500" @loadmore="loadMore(index1)">
+						<refresh class="refresh" @refresh="onrefresh(index1)" @pullingdown="onpullingdown" :display="tab.refreshing ? 'show' : 'hide'">
+							<div class="refresh-view">
+								<image class="refresh-icon" :src="refreshIcon" :style="{width: (tab.refreshing || pulling) ? 0: '30px'}" :class="{'refresh-icon-active': tab.refreshFlag}"></image>
+								<loading-indicator class="loading-icon" animating="true" v-if="tab.refreshing"></loading-indicator>
+								<text class="loading-text">{{tab.refreshText}}</text>
+							</div>
+						</refresh>
+
+						<!-- list -->
+						<cell v-for="(topicItem, dindex) in tab.data" :key="topicItem.id">
+							<newest-item v-if="index1 !== 2" v-model="tab.data[dindex]"></newest-item>
+							<forum-item v-if="index1 === 2" v-model="tab.data[dindex]"></forum-item>
+						</cell>
+
+						<!-- 暂无数据 -->
+						<cell v-if="tab.data.length == 0 && !tab.isLoading">
+							<uni-no-data></uni-no-data>
+						</cell>
+						
+						<cell class="loading-more flex-col">
+							<view v-if="tab.isLoading || tab.data.length >= 10">
+								<text class="loading-more-text flex-col">{{tab.loadingText}}</text>
+							</view>
+						</cell>
+					</list>
+				</swiper-item>
+			</swiper>
+
+			<uni-popup class="idea-popup" ref="popup1" maskClick="true" type="bottom">
+				<view class="idea-form">
+					<view class="form-tool">
+						<text class="tool-cancel" @click="backClick">取消</text>
+						<text class="tool-publish" @click="askpublishClick">发布</text>
+					</view>
+					<form class="form-content">
+						<view class="uni-form-item uni-column">
+							<input class="form-title uni-input" v-model="ask.issueTitle" maxlength="60" placeholder-style="color:#000000"
+							 placeholder="输入问题并以问号结尾" />
+						</view>
+						<view class="uni-form-item uni-column">
+							<textarea class="form-desc" auto-height v-model="ask.issueDesc" maxlength="200" placeholder-style="color:#b6b6b6"
+							 placeholder="对问题补充说明，可以更快获得解答（选填）" />
+							</view>
+					</form>
+				</view>
+			</uni-popup>
+
+			<uni-popup class="idea-popup" ref="popup" maskClick="true" type="bottom">
+				<view class="idea-form">
+					<view class="form-tool">
+						<text class="tool-cancel" @click="cancelClick">取消</text>
+						<text class="tool-publish" @click="publishClick">发布</text>
+					</view>
+					<form class="form-content">
+						<view class="uni-form-item uni-column">
+							<view>
+								<textarea class="form-desc" auto-height v-model="idea.ideaContent" maxlength="200" placeholder-style="color:#000000" placeholder="分享您的观点"/>
+							</view>
+							<view style="flex: 1;">
+								<up-img v-model="idea.imgUrls"></up-img>
+							</view>
+						</view>
+					</form>
+				</view>
+			</uni-popup>
+
+			<tip-box ref='tip' :info="tipInfo"></tip-box>
+			<eula-box ref='eula' :info="eulaInfo"></eula-box>
+
+			<uni-user-menu></uni-user-menu>
+		</view>
+
+	</view>
+</template>
+
+<script>
+	import uniPopup from "@/components/uni-popup/uni-popup.vue"
+    import YdTopsearch from '../yd-topsearch/index.nvue';
+	import NewestItem from './newest-item.nvue';
+	import ForumItem from './forum-item.nvue';
+    import tipBox from '@/components/tip.nvue';
+    import eulaBox from '@/components/eula.nvue';
+	import upImg from "@/pages/yd-upload/up-img.vue";
+	import * as utils from '@/utils/index.js'
+	import {
+		Api_GetRecommendList,
+		Api_GetNewestList,
+		Api_GetIdeaList,
+		Api_GetIdeaAdd,
+        Api_GetIssueAdd
+	} from '@/api/faq.js';
+
+    // 缓存每页最多
+    const MAX_CACHE_DATA = 100;
+    // 缓存页签数量
+    const MAX_CACHE_PAGE = 3;
+
+    export default {
+        components: {
+			uniPopup,
+			NewestItem,
+			ForumItem,
+			upImg,
+			YdTopsearch,
+            tipBox,
+            eulaBox
+        },
+        data() {
+            return {
+				active: 0,
+				sortBtn: 'publishDate',
+                newsList: [],
+                cacheTab: [],
+                tabIndex: 0,
+                tabList: [{
+					name: '推荐',
+					id: '1',
+				}, {
+					name: '最新',
+					id: '2'
+				}, {
+					name: '大家谈',
+					id: '3'
+				}],
+                scrollInto: "",
+                showTips: false,
+                navigateFlag: false,
+                pulling: false,
+                refreshIcon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAB5QTFRFcHBw3Nzct7e39vb2ycnJioqK7e3tpqam29vb////D8oK7wAAAAp0Uk5T////////////ALLMLM8AAABxSURBVHja7JVBDoAgDASrjqj//7CJBi90iyYeOHTPMwmFZrHjYyyFYYUy1bwUZqtJIYVxhf1a6u0R7iUvWsCcrEtwJHp8MwMdvh2amHduiZD3rpWId9+BgPd7Cc2LIkPyqvlQvKxKBJ//Qwq/CacAAwDUv0a0YuKhzgAAAABJRU5ErkJggg==",
+				tabBarLength: 0,
+				tipInfo:{type: 4, dialogVisible: false, className: 'layer layer1'},
+				idea:{
+					ideaContent: '',
+					imgUrls: [],
+				},
+                ask:{
+                    issueTitle:'',
+                    issueDesc:''
+                },
+                eulaInfo:{type: 1, dialogVisible: false},
+				fixHeight: 0
+            }
+        },
+		onNavigationBarSearchInputClicked(e) {
+			uni.navigateTo({
+				url: '/pages/search/search'
+			});
+		},
+        onLoad(options) {
+			uni.setStorageSync('wd-un-flush', true);
+			this.tabList.forEach((tabBar, index) => {
+				this.newsList.push({
+					data: [],
+					bannerImgUrl: '/static/img/topic/b' + index + '.png',
+					isLoading: true,
+					refreshText: "",
+					loadingText: '加载中...',
+					requestParams: { // 参数信息
+						orderProperty: 'publishDate',
+						currentPage: 1,
+						pageSize: 10,
+						category: tabBar.id
+					},
+					totalPageNumber: 0, // 总页数
+					totalRecordNumber: 0, // 总数量
+				});
+			});
+    //         setTimeout(()=>{
+				// this.getList(this.tabIndex, true);
+    //         }, 500);
+	
+			this.getList(0);
+		},
+		onShow() {
+			// 从积分任务跳转过来时的判断，勿删！！！
+			if (uni.getStorageSync('tabBarIndex') || uni.getStorageSync('tabBarIndex') === 0) {
+				if (this.tabIndex !== uni.getStorageSync('tabBarIndex')) {
+					this.tabIndex = uni.getStorageSync('tabBarIndex');
+				}
+			}
+
+            // this.sortType(0);
+            // this.sortType(1);
+            // this.sortType(2);
+		},
+		onHide() {
+			uni.removeStorageSync('tabBarIndex');
+		},
+		onTabItemTap(){
+			this.idea.ideaContent= '';
+			this.idea.imgUrls= [];
+			this.$refs.popup.close();
+            this.ask.issueTitle = '';
+            this.ask.issueDesc = '';
+            this.$refs.popup1.close();
+		},
+		computed: {
+			indicatorLineLeft() {
+				return (250 - 48)/2 + this.tabIndex * 250 + 'rpx';
+			}
+		},
+        methods: {
+            backClick(){
+                this.ask.issueTitle = '';
+                this.ask.issueDesc = '';
+                this.$refs.popup1.close();
+            },
+            // 提问
+            askpublishClick(){
+                const _self = this;
+                if(!_self.ask.issueTitle){
+                    uni.showToast({
+                        icon:'none',
+                        title: '请输入问题标题',
+                        duration: 2000
+                    });
+                    return false;
+                }
+                uni.showLoading();
+
+                // 设置返回刷新列表
+                Api_GetIssueAdd(_self.ask).then(res =>{
+                    uni.hideLoading()
+                    if(res.success){
+                        _self.$refs.popup1.close();
+                        // 第一次提问
+                        if(res.data.first) {
+                            _self.tipInfo.type = 3;
+                            _self.$refs.tip.show();
+                        }
+
+                        uni.setStorageSync('wd-un-flush', true);
+                        uni.navigateTo({
+                            url: '/pages/faq/faq/detail?id=' + res.data.id
+                        });
+                    }else{
+                        uni.showToast({
+                            icon:'none',
+                            title: '发布问题失败',
+                            duration: 2000
+                        });
+                    }
+                })
+            },
+			askClick(){
+				utils.getUserInfo(true).then(res => {
+					if (res.isLogin && res.forbidden === true) {
+						uni.showToast({
+							icon:'none',
+							title: '您已被禁言，禁言后您将不能再平台上做任何留言！',
+							duration: 2000
+						});
+						return;
+					}
+					const platform = uni.getSystemInfoSync().platform;
+					if (platform == 'ios' && !uni.getStorageSync('eula')) {
+					    this.eulaInfo.type = 1;
+					    this.$refs.eula.showEula();
+					} else {
+					    this.commit(1);
+					}
+				});
+			},
+            commit(type) {
+			    if (type === 1) {
+                    this.ask.issueTitle = '';
+                    this.ask.issueDesc = '';
+                    this.$refs.popup1.open();
+                   /* uni.navigateTo({
+                        url: '/pages/faq/faq-ask'
+                    });*/
+				} else {
+                    this.idea.ideaContent = '';
+                    this.$refs.popup.open();
+				}
+            },
+			ideaClick(){
+				utils.getUserInfo(true).then(res => {
+					if (res.isLogin && res.forbidden === true) {
+						uni.showToast({
+							icon:'none',
+							title: '您已被禁言，禁言后您将不能再平台上做任何留言！',
+							duration: 2000
+						});
+						return;
+					}
+					const platform = uni.getSystemInfoSync().platform;
+					if (platform == 'ios' && !uni.getStorageSync('eula')) {
+					    this.eulaInfo.type = 2;
+					    this.$refs.eula.showEula();
+					} else {
+					    this.commit(2);
+					}
+				});
+			},
+			cancelClick(){
+				this.idea.ideaContent= '';
+				this.idea.imgUrls= [];
+				this.$refs.popup.close();
+			},
+			// 发布想法
+			publishClick(){
+				if(!this.idea.ideaContent){
+					uni.showToast({
+						icon:'none',
+						title: '请输入您的观点',
+						duration: 2000
+					});
+					return false;
+				}
+				let that = this;
+                uni.showLoading();
+				Api_GetIdeaAdd(this.idea).then(res =>{
+                    uni.hideLoading()
+					if(res.success){
+						that.idea.ideaContent = '';
+						that.idea.imgUrls = [];
+						that.$refs.popup.close();
+						setTimeout(()=>{
+							this.getList(this.tabIndex, true);
+						}, 500);
+						if (res.data.firstStatus) {
+			                that.$refs.tip.show();
+						}
+					}else{
+						uni.showToast({
+							icon:'none',
+							title: '发布观点失败',
+							duration: 2000
+						});
+					}
+				})
+			},
+			getInfo(active) {
+				this.active = active;
+				this.getList(0, true);
+			},
+			goDetail(link) {
+				uni.navigateTo({
+					url: link
+				});
+			},
+            getList(index, flush) {
+				let activeTab = this.newsList[index];
+
+				// 刷新，从第一页查
+				if (flush) {
+					activeTab.requestParams.currentPage = 1;
+				}
+				if (index === 0) {
+					// 推荐
+					Api_GetRecommendList(activeTab.requestParams).then(res => {
+						this.initData(res, activeTab);
+						// activeTab.isLoading = false;
+					}).catch(err => {
+						console.log(err);
+						// activeTab.isLoading = false;
+					});
+				} else if (index === 1) {
+					// 最新
+					Api_GetNewestList(activeTab.requestParams).then(res => {
+						this.initData(res, activeTab);
+						// activeTab.isLoading = false;
+					}).catch(err => {
+						console.log(err);
+						// activeTab.isLoading = false;
+					});
+				} else if (index === 2) {
+					// 大家谈
+					Api_GetIdeaList(activeTab.requestParams).then(res => {
+						this.initData(res, activeTab);
+						// activeTab.isLoading = false;
+					}).catch(err => {
+						console.log(err);
+						// activeTab.isLoading = false;
+					});
+				}
+            },
+			// 处理接口返回数据
+			initData(res, activeTab) {
+				if (res.statusCode === 1) {
+					activeTab.totalPageNumber = res.data.totalPageNumber;
+					activeTab.totalRecordNumber = res.data.totalRecordNumber;
+					let resData = res.data.data;
+					if (activeTab.requestParams.currentPage <= 1) {
+						activeTab.data = resData;
+						activeTab.loadingText = '—— 没有更多数据了 ——';
+					} else {
+						activeTab.data = activeTab.data.concat(resData);
+					}
+					if (this.newsList[this.tabIndex].requestParams.currentPage >= activeTab.totalPageNumber) {
+						this.newsList[this.tabIndex].loadingText = '—— 没有更多数据了 ——';
+					} else {
+						this.newsList[this.tabIndex].loadingText = '—— 上拉显示更多 ——';
+					}
+				}
+			},
+            loadMore(e) {
+				this.newsList[this.tabIndex].isLoading = true;
+				this.newsList[this.tabIndex].loadingText = "加载中...";
+                setTimeout(() => {
+					this.newsList[this.tabIndex].requestParams.currentPage ++;
+                    this.getList(this.tabIndex, false);
+                }, 500);
+            },
+            ontabtap(e) {
+                let index = e.target.dataset.current || e.currentTarget.dataset.current;
+                this.switchTab(index);
+            },
+			sortType(index){
+				this.newsList[index].requestParams.orderProperty = this.sortBtn;
+				this.getList(index);
+			},
+            ontabchange(e) {
+                let index = e.target.current || e.detail.current;
+                this.switchTab(index);
+            },
+            switchTab(index) {
+                if (this.newsList[index].data.length === 0) {
+                    this.getList(index, true);
+                }
+
+                if (this.tabIndex === index) {
+                    return;
+                }
+                this.tabIndex = index;
+                this.scrollInto = this.tabList[index].id;
+            },
+            clearTabData(e) {
+                this.newsList[e].data.length = 0;
+                this.newsList[e].loadingText = "";
+            },
+            refreshData() {
+				setTimeout(()=>{
+					this.getList(this.tabIndex, true);
+				}, 500);
+			},
+            onrefresh(e) {
+                var tab = this.newsList[this.tabIndex];
+                if (!tab.refreshFlag) {
+                    return;
+                }
+                tab.refreshing = true;
+                tab.refreshText = "正在刷新...";
+
+                setTimeout(() => {
+                    this.refreshData();
+                    this.pulling = true;
+                    tab.refreshing = false;
+					tab.refreshFlag = false;
+                    tab.refreshText = "已刷新";
+                    setTimeout(() => { // TODO fix ios和Android 动画时间相反问题
+                        this.pulling = false;
+                    }, 500);
+                }, 2000);
+            },
+            onpullingdown(e) {
+                var tab = this.newsList[this.tabIndex];
+                if (tab.refreshing || this.pulling) {
+                    return;
+                }
+                if (Math.abs(e.pullingDistance) > Math.abs(e.viewHeight)) {
+                    tab.refreshFlag = true;
+                    tab.refreshText = "释放立即刷新";
+                } else {
+                    tab.refreshFlag = false;
+                    tab.refreshText = "下拉可以刷新";
+                }
+            }
+        }
+    }
+</script>
+
+<style scoped>
+    /* #ifndef APP-PLUS */
+    page {
+        width: 100%;
+        min-height: 100%;
+        display: flex;
+    }
+
+    /* #endif */
+
+	.faq-page{
+		/* #ifndef APP-PLUS */
+		display: flex;
+		/* #endif */
+		flex: 1;
+		flex-direction: column;
+		position: absolute;
+		bottom: 0;
+		top: 0;
+		left: 0;
+		right: 0;
+	}
+
+    .tabs {
+        flex: 1;
+        flex-direction: column;
+        overflow: hidden;
+        background-color: #ffffff;
+        /* #ifdef MP-ALIPAY || MP-BAIDU */
+        height: 100vh;
+        /* #endif */
+    }
+
+    .tab-bar {
+        width: 750rpx;
+        height: 90rpx;
+		background-image: linear-gradient(to bottom,#d51e1e, #f85b2c);
+        flex-direction: row;
+        /* #ifndef APP-PLUS */
+        white-space: nowrap;
+        /* #endif */
+    }
+
+    .line-h {
+		position: absolute;
+		bottom: 6px;
+        height: 6rpx;
+		width: 48rpx;
+		transition: left 0.3s;
+		background-image: linear-gradient(to right,#ffffff, rgba(255, 255, 255, 0.3));
+    }
+
+    .uni-tab-item {
+		/* #ifndef APP-PLUS */
+		display: inline-block;
+		/* #endif */
+		width: 250rpx;
+        flex-wrap: nowrap;
+		text-align: center;
+		align-items: center;
+		justify-content: center;
+    }
+
+    .uni-tab-item-title {
+        color: #fff;
+        font-size: 30rpx;
+        height: 90rpx;
+        line-height: 90rpx;
+        flex-wrap: nowrap;
+        /* #ifndef APP-PLUS */
+        white-space: nowrap;
+        /* #endif */
+		text-align: center;
+    }
+
+    .uni-tab-item-title-active {
+        color: #fff;
+		font-size: 36rpx;
+    }
+
+    .swiper-box {
+        flex: 1;
+    }
+
+    .swiper-item {
+        flex: 1;
+        flex-direction: row;
+    }
+
+    .scroll-v {
+        flex: 1;
+        /* #ifndef MP-ALIPAY */
+        flex-direction: column;
+        /* #endif */
+        width: 750rpx;
+    }
+	.add-btn{
+		position: fixed;
+		right: 0;
+		top: 480rpx;
+		z-index: 98;
+	}
+	.btn-img{
+		width: 100rpx;
+		height: 100rpx;
+	}
+	.add-btn:active{
+		opacity: .9;
+	}
+    .update-tips {
+        position: absolute;
+        left: 0;
+        top: 41px;
+        right: 0;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        background-color: #FDDD9B;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .update-tips-text {
+        font-size: 14px;
+        color: #ffffff;
+    }
+
+    .refresh {
+        width: 750rpx;
+        height: 64px;
+        justify-content: center;
+    }
+
+    .refresh-view {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+    }
+
+	.refresh-icon {
+		width: 30px;
+		height: 30px;
+		transition-duration: .5s;
+		transition-property: transform;
+		transform: rotate(0deg);
+		transform-origin: 15px 15px;
+	}
+
+	.refresh-icon-active {
+		transform: rotate(180deg);
+	}
+
+	.loading-icon {
+		width: 20px;
+		height: 20px;
+		margin-right: 5px;
+		color: #999999;
+	}
+
+    .loading-text {
+        margin-left: 2px;
+        font-size: 16px;
+        color: #999999;
+    }
+
+	.loading-more {
+		width: 750rpx;
+		padding-top: 10px;
+		padding-bottom: 10px;
+	}
+
+	.loading-more-text {
+		font-size: 28rpx;
+		color: #cccccc;
+		text-align: center;
+	}
+
+	.banner {
+		width: 750rpx;
+		height: 217rpx;
+		border-radius: 20rpx;
+		position: relative;
+	}
+	.img {
+		margin: 20rpx;
+		width: 710rpx;
+		height: 177rpx;
+	}
+	.zjj {
+		position: absolute;
+		right: 0;
+		top: 40rpx;
+		width: 99rpx;
+		height: 40rpx;
+		z-index: 999;
+	}
+	.tags {
+		display: flex;
+		padding-left: 20rpx;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 20rpx;
+	}
+	.ctag {
+		width: 80rpx;
+		height: 40rpx;
+		line-height: 40rpx;
+		margin-right: 13rpx;
+		background-color: #dfdfdf;
+		color: #5d5d5d;
+		text-align: center;
+		border-radius: 10rpx;
+		font-size: 24rpx;
+	}
+	.act {
+		background-color: #ce0201;
+		color: #ffffff;
+	}
+	.hot {
+		/* #ifndef APP-NVUE */
+		display: flex;
+		/* #endif */
+		flex-direction: row;
+		padding: 0 20rpx 10rpx;
+	}
+	.txt {
+		color: #5d5d5d;
+		font-size: 28rpx;
+		padding: 6rpx;
+	}
+	.check {
+		color: #ce0201;
+	}
+	.idea-popup{
+		/* #ifndef APP-PLUS */
+		display: flex;
+		/* #endif */
+		flex: 1;
+	    z-index: 999;
+	}
+
+	.eula-popup{
+		/* #ifndef APP-PLUS */
+		display: flex;
+		width: 750rpx;
+		/* #endif */
+		flex: 1;
+		z-index: 999;
+	}
+	.idea-form{
+		flex: 1;
+		/* #ifndef APP-PLUS */
+		display: flex;
+		/* #endif */
+		flex-direction: column;
+		height: 900rpx;
+		border-top-left-radius: 20rpx;
+		border-top-right-radius: 20rpx;
+		background-color: #fff;
+	}
+	.eula-form{
+		flex: 1;
+		/* #ifndef APP-PLUS */
+		display: flex;
+		/* #endif */
+		flex-direction: column;
+		width: 650rpx;
+		height: 1000rpx;
+		border-radius: 20rpx;
+		background-color: #fff;
+	}
+	.form-tool{
+		/* #ifndef APP-PLUS */
+		display: flex;
+		/* #endif */
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding: 25rpx 0 14rpx;
+		margin: 0 24rpx;
+		border-bottom-width: 1px;
+		border-bottom-color: #dddddd;
+		border-style: solid;
+	}
+	.tool-cancel{
+		font-size: 30rpx;
+		color: #999999;
+	}
+	.tool-publish{
+		font-size: 30rpx;
+		color: #333333;
+	}
+	.form-title{
+		font-size: 30rpx;
+		margin: 20rpx 24rpx;
+	}
+	.form-desc{
+		font-size: 30rpx;
+		margin: 20rpx 24rpx;
+		width: 702rpx
+	}
+	/deep/ .uni-textarea-textarea {
+		line-height: normal;
+		color: red;
+	}
+</style>

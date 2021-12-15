@@ -1,0 +1,77 @@
+<template>
+    <view class="pwd">
+        <form @submit="save" class="form">
+            <input type="text" v-model="company" :value="company" name="company" class="input" maxlength="15"
+                   placeholder="请填写公司/单位"/>
+            <button form-type="submit" class="yd-btn yd-btn-type1" type="primary" :loading="loading">保存</button>
+        </form>
+    </view>
+</template>
+
+<script>
+    import * as utils from '@/utils/index.js';
+    import * as api from "@/api/userCenter.js"
+    import graceChecker from "@/common/js/graceChecker.js";
+
+    export default {
+        data() {
+            return {
+                loading: false,
+                company: utils.getStorageUserInfo('company')
+            }
+        },
+        methods: {
+            save(e) {
+                var rule = [
+                    {name: "company", checkType: "notnull", checkRule: "", errorMsg: "请填写公司/单位"}
+                ];
+                var formData = e.detail.value;
+                var checkRes = graceChecker.check(formData, rule);
+                if (!checkRes) {
+                    uni.showToast({title: graceChecker.error, icon: "none"});
+                    return;
+                }
+                this.loading = true;
+                api.Api_editCompany(this.company).then(res => {
+                    this.loading = false;
+                    if (res.statusCode === 1) {
+                        uni.navigateBack({
+                            delta: 1,
+                            animationType: 'pop-out',
+                            animationDuration: 200
+                        });
+                        // 显示获取积分
+                        utils.showScore(res.data);
+                    }
+                })
+            }
+        }
+    }
+</script>
+
+<style>
+    .pwd {
+        flex: 1;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .form {
+        width: 600rpx;
+        position: relative;
+    }
+
+    .input {
+        font-size: 32rpx;
+        height: 100rpx;
+        line-height: 100rpx;
+        border-bottom-width: 2rpx;
+        border-bottom-color: #e9e9eb;
+        border-bottom-style: solid;
+    }
+
+    .yd-btn {
+        margin-top: 120rpx;
+    }
+</style>
+

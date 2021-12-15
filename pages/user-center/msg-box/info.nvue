@@ -1,0 +1,147 @@
+<template>
+	<view class="msg-page">
+		<uni-nav-bar class="nav-topbar" @clickLeft="backClick" :fixed="false" color="#ffffff" background-color="#d51e1e" statusBar="true" left-icon="arrowleft"></uni-nav-bar>
+		<msg-tab class="tab-top" v-model="tabIndex" :tabs="tabList" :fixed="true"></msg-tab>
+		<swiper class="tab-box" :current="tabIndex" @change="swiperChange">
+			<!-- 评论 -->
+			<swiper-item>
+				<comment-list :i="0" v-model="item" :index="tabIndex"></comment-list>
+			</swiper-item>
+			<!-- 回答 -->
+			<swiper-item>
+			</swiper-item>
+			<!-- 文章 -->
+			<swiper-item>
+			</swiper-item>
+			<!-- 想法 -->
+			<swiper-item>
+			</swiper-item>
+		</swiper>
+	</view>
+</template>
+
+
+<script>
+	import uniNavBar from '@/components/uni-nav-bar/uni-nav-bar.vue'
+	import MsgTab from './msg/msg-tab.nvue'
+	import CommentList from './msg/comment-list.nvue'
+	export default {
+		components: {
+			MsgTab,
+			CommentList,
+		},
+		data() {
+			return {
+				uniNavBar,
+				item:{
+					title: '标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题',
+					desc: '简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介',
+					time: '2010-10-10',
+					open: false,
+				},
+				tabList: [
+					{name: '评论'}, 
+					{name: '回答'},
+					{name: '文章'},
+					{name: '想法'},
+				],
+				tabIndex:0,
+			}
+		},
+		mounted(){
+		},
+		methods: {
+			backClick(){
+				uni.navigateBack({
+				    delta: 1
+				});
+			},
+			swiperChange(e){
+				this.tabIndex = e.detail.current
+			}
+		}
+	}
+</script>
+
+<style scoped>
+	.pdT0{
+		padding-top: 0!important;
+	}
+	.msg-page{
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;	
+		justify-content: flex-start;
+	}
+	.space-line {
+		background-color: #f7f7f7;
+		height: 20rpx;
+		margin-top: 40rpx;
+	}
+	.top-share{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.panel-top{
+		display: flex;
+		flex-direction: row;
+		align-items: center;	
+		justify-content: flex-start;
+		padding: 24rpx 20rpx 0 20rpx;
+	}
+	.user-img{
+		width: 64rpx;
+		height: 64rpx;
+		margin-right: 16rpx;
+		border-radius: 200rpx;
+	}
+	.user-name{
+		color: #000000;
+		line-height: 1.4;
+		font-size: 26rpx;
+		lines: 1;
+		text-overflow: ellipsis;
+		width: 500rpx;
+	}
+	.user-time{
+		color: #999999;
+		font-size: 24rpx;
+	}
+	.share-img{
+		width: 38rpx;
+		height: 39rpx;
+	}
+	.panel-content{
+		padding: 16rpx 20rpx 10rpx;
+	}
+	.content-title{
+		font-size: 26rpx;
+		color: #262626;
+		overflow: hidden;
+		text-overflow: -o-ellipsis-lastline;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+	}
+	.panel-img-list{
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+	.list-img{
+		width: 243rpx;
+		height: 162rpx;
+	}
+	.idea-comment{
+		flex: 1;
+	}
+	.tab-box {
+	 		flex: 1;
+	 	}
+</style>
+

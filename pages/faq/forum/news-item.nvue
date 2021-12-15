@@ -1,0 +1,203 @@
+<template>
+	<view class="share-panel">
+		<view class="share-user">
+			<image class="user-img" :src="userImgUrl(value.headPicUrl)" mode=""></image>
+			<view class="user-desc">
+				<text class="user-name">{{ value.username }}</text>
+				<image src="@/static/img/ico-more.png" mode="aspectFill" class="ico-pb" @click="sendBlackInfo(value.username, value.userId)"></image>
+			</view>
+		</view>
+		<view class="share-tag">
+			<text class="share-title">转发资讯</text>
+		</view>
+		<view class="news-item view" @click="itemClick(value)">
+			<view class="news-info-box">
+				<text class="news-title">{{value.content.title}}</text>
+				<text class="news-desc">{{value.content.text}}</text>
+				<view class="news-foot flex-row">
+					<view class="news-info flex-row">
+						<text class="news-tag">快讯</text>
+					</view>
+				</view>
+			</view>
+			<image :fade-show="false" class="news-image" :src="newImgUrl((value.content.titleImg.length>0) ? (value.content.titleImg[0].domain + '/' + value.content.titleImg[0].url) : false)" mode="aspectFill"></image>
+		</view>
+		<view class="share-time">
+			<text class="info-time">{{ value.publishDate | dateFormat('yyyy-MM-dd hh:mm:ss')}}</text>
+		</view>
+		<view class="space-line"></view>
+	</view>
+</template>
+
+<script>
+	import {
+		Api_Pullblack
+	} from '@/api/faq.js';
+	import {dateFormat} from '@/utils/index.js'
+	export default {
+		filters:{
+			dateFormat
+		},
+		props: {
+			value: {
+				type: Object,
+				default: function(){
+					return {}
+				}
+			}
+		},
+		data() {
+			return {
+			};
+		},
+		methods: {
+			sendBlackInfo(name, userId){
+				this.$store.dispatch('saveUserMenu', true)
+				this.$store.dispatch('saveBlackInfo', {name:name, userId: userId})
+			},
+			userImgUrl(url){
+				return url ? url : '/static/img/demo1.png';
+			},
+			newImgUrl(url){
+				return url ? url:'/static/img/demo2.png';
+			},
+			itemClick(item){
+			    let url;
+			    if (item.shareType == 4 || item.shareType == 5) {
+                    url = '/pages/faq/faq/detail';
+				} else if (item.shareType == 3) {
+                    url = '/pages/details/book-detail';
+				} else {
+                    url = '/pages/details/details';
+				}
+                url += '?id=' +item.businessId;
+                uni.navigateTo({url: url});
+			}
+		}
+	};
+</script>
+
+<style scoped>
+/* 大家谈 */
+.share-user{
+	margin-top: 10rpx;
+	margin-bottom: 10rpx;
+	flex-direction: row;
+	align-items: center;
+	padding: 35rpx 20rpx 10rpx;
+}
+
+.share-tag{
+	padding:0 24rpx 10rpx;
+}
+
+.share-title{
+	color: #000000;
+	font-size: 28rpx;
+	margin-top: 20rpx;
+	margin-bottom: 15rpx;
+}
+
+.share-time{
+	padding: 20rpx 24rpx 30rpx 24rpx;
+}
+
+.user-img{
+	width: 45rpx;
+	height: 45rpx;
+	margin-right: 16rpx;
+	border-radius: 200rpx;
+}
+.user-name{
+	color: #999999;
+	font-size: 24rpx;
+	lines: 1;
+	text-overflow: ellipsis;
+	width: 500rpx;
+}
+.space-line {
+	background-color: #f7f7f7;
+	height: 20rpx;
+	width: 750rpx;
+}
+.news-item {
+	position: relative;
+	display: flex;
+	flex-direction: row;
+	flex: 1;
+	background-color: #f8f8f8;
+	padding: 30rpx 24rpx;
+}
+
+.news-info-box {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.news-title {
+	lines: 1;
+	font-size: 32rpx;
+	color: #000000;
+	line-height: 30rpx;
+	text-overflow: ellipsis;
+	margin-bottom: 16rpx;
+	margin-right: 30rpx;
+}
+
+.news-desc {
+	flex: 1;
+	lines: 2;
+	font-size: 26rpx;
+	line-height: 38rpx;
+	color: #787878;
+	height: 52rpx;
+	text-overflow: ellipsis;
+	margin-right: 30rpx;
+	margin-bottom: 10rpx;
+}
+.news-foot {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.news-info {
+	flex-direction: row;
+	align-items: center;
+}
+
+.news-tag{
+	color: rgb(209, 12, 11);
+	padding: 0 8rpx;
+	font-size: 24rpx;
+	border-radius: 6rpx;
+	border-width: 1rpx;
+	border-style: solid;
+	border-color: rgb(209, 12, 11);
+}
+.info-time {
+	margin-right: 20rpx;
+	color: #999999;
+	font-size: 24rpx;
+}
+
+.news-image {
+	width: 164rpx;
+	height: 164rpx;
+	border-radius: 6rpx;
+	overflow: hidden;
+}
+
+.user-desc {
+	flex: 1;
+	flex-direction: row;
+	justify-content: space-between;
+}
+
+.ico-pb {
+	width: 35rpx;
+	height: 35rpx;
+}
+</style>

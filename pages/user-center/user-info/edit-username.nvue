@@ -1,0 +1,97 @@
+<template>
+    <view class="pwd">
+        <form @submit="save" class="form">
+            <input type="text" v-model="username" :value="username" name="username" class="input" maxlength="50"
+                   placeholder="请填写用户名"/>
+            <button form-type="submit" class="yd-btn yd-btn-type1" type="primary" :loading="loading">保存</button>
+        </form>
+    </view>
+</template>
+
+<script>
+    import * as utils from '@/utils/index.js';
+    import * as api from "@/api/userCenter.js";
+    import {Api_Logout} from "@/api/login.js";
+    import graceChecker from "@/common/js/graceChecker.js";
+
+    export default {
+        data() {
+            return {
+                loading: false,
+                username: utils.getStorageUserInfo('username')
+            }
+        },
+        methods: {
+            save(e) {
+                var rule = [
+                    {name: "username", checkType: "notnull", checkRule: "", errorMsg: "请填写用户名"}
+                ];
+                var formData = e.detail.value;
+                var checkRes = graceChecker.check(formData, rule);
+                if (!checkRes) {
+                    uni.showToast({title: graceChecker.error, icon: "none"});
+                    return;
+                }
+                api.Api_isUsername(this.username).then(res => {
+                    if (res.statusCode === 1) {
+                        // 没有重复
+                        this.loading = true;
+                        api.Api_editUsername(this.username).then(res => {
+                            if (res.statusCode === 2) {
+                                // 用户名重复
+                                uni.showToast({title: '请重新填写，该用户名已存在！', icon: "none"});
+                            } else if (res.statusCode === 1) {
+                                // 调用后台注销token
+                                Api_Logout().then(res => {
+                                    // 清空 缓存
+                                    uni.removeStorageSync("user-token");
+                                    uni.removeStorageSync("userInfo");
+                                    // 跳转登录
+                                    uni.reLaunch({
+                                        url: '/pages/user-center/user-center'
+                                    });
+                                    uni.showToast({
+                                        icon: 'none',
+                                        title: '请重新登录',
+                                        duration: 2000
+                                    });
+                                });
+                            }
+                        })
+                    } else {
+                        // 重复了重新填写
+                        this.username = '';
+                        uni.showToast({title: '请重新填写，该用户名已存在！', icon: "none"});
+                    }
+                });
+            }
+        }
+    }
+</script>
+
+<style>
+    .pwd {
+        flex: 1;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .form {
+        width: 600rpx;
+        position: relative;
+    }
+
+    .input {
+        height: 100rpx;
+        font-size: 32rpx;
+        line-height: 100rpx;
+        border-bottom-width: 2rpx;
+        border-bottom-color: #e9e9eb;
+        border-bottom-style: solid;
+    }
+
+    .yd-btn {
+        margin-top: 120rpx;
+    }
+</style>
+

@@ -1,0 +1,46 @@
+<template>
+    <view>
+        <text class="text">
+        一、积分是什么
+
+        您在源点信用APP中，参与评论、问答等互动，即可获得对应的积分。
+
+        二、积分有什么用
+
+        您可用积分订阅【专栏】中的部分文章，后续将会推出更多积分兑换活动，敬请期待。
+		
+        三、如何获取积分
+
+        您可以通过【每日签到】、【完善信息】、【评论】、【转发】、【回答问题】、【发表大家谈】、【专注专家】、【专注问题】、【邀请朋友】这些途径获得积分奖励，更多积分任务将陆续上限，敬请期待。
+		
+        四、严禁恶意盗刷积分
+
+        为保证平台公平性及所有用户的正当权益，严禁任何人恶意盗刷积分。
+        </text>
+    </view>
+</template>
+
+<script>
+    export default {
+        data() {
+            return {
+                title: '1'
+            }
+        },
+        methods: {
+        }
+    }
+</script>
+
+<style>
+    .title{
+        padding: 40rpx;
+        font-size: 36rpx;
+        margin: 0 auto;
+        text-align: center;
+    }
+    .text{
+        padding: 0 40rpx;
+        font-size: 32rpx;
+    }
+</style>

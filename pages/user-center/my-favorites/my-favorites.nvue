@@ -1,0 +1,260 @@
+<template>
+    <!-- #ifdef APP-NVUE -->
+    <list class="scroll-v list" enableBackToTop="true" scroll-y loadmoreoffset="500" @loadmore="loadMore()">
+        <refresh class="refresh" @refresh="onrefresh()" @pullingdown="onpullingdown" :display="params.refreshing ? 'show' : 'hide'">
+            <div class="refresh-view">
+                <image class="refresh-icon" :src="refreshIcon" :style="{width: (params.refreshing || pulling) ? 0: '30px'}" :class="{'refresh-icon-active': params.refreshFlag}"></image>
+                <loading-indicator class="loading-icon" animating="true" v-if="params.refreshing"></loading-indicator>
+                <text class="loading-text">{{params.refreshText}}</text>
+            </div>
+        </refresh>
+        <cell>
+            <uni-swipe-action>
+                <view v-for="(item, index) in params.data" :key="index">
+                    <uni-swipe-action-item :options="options" @click="cancelCollect(item.businessId, index)">
+                        <item1 :item1="item" :index="index"></item1>
+                    </uni-swipe-action-item>
+                </view>
+            </uni-swipe-action>
+        </cell>
+        <cell v-if="params.data.length == 0 && !params.isLoading">
+            <uni-no-data></uni-no-data>
+        </cell>
+        <cell class="loading-more" v-if="params.isLoading || params.data.length > 10">
+            <text class="loading-more-text">{{params.loadingText}}</text>
+        </cell>
+    </list>
+    <!-- #endif -->
+</template>
+
+<script>
+    import uniSwipeAction from '@/components/uni-swipe-action/uni-swipe-action.vue'
+    import uniSwipeActionItem from '@/components/uni-swipe-action-item/uni-swipe-action-item.vue'
+    import item1 from '@/components/item-list.vue';
+    import {Api_GetMyCollectinsList, Api_AddCollection} from '@/api/userCenter.js';
+    import {
+        Api_GetCollectionStatus
+    } from '@/api/news.js';
+    import {
+        friendlyDate
+    } from '@/common/js/util.js';
+
+    export default {
+        components: {
+            uniSwipeAction,
+            uniSwipeActionItem,
+            item1
+        },
+        data() {
+            return {
+                params: {
+                    currentIndex: '',
+                    currentId: '',
+                    currentStatus: '',
+                    data: [],
+                    isLoading: true,
+                    refreshText: "",
+                    loadingText: '',
+                    requestParams: { // 参数信息
+                        currentPage: 1,
+                        pageSize: 10
+                    },
+                    totalPageNumber: 0, // 总页数
+                    totalRecordNumber: 0, // 总数量
+                },
+                options: [
+                    {
+                        text: '取消收藏',
+                        style: {
+                            backgroundColor: '#dd524d'
+                        }
+                    }
+                ],
+                scrollInto: "",
+                showTips: false,
+                navigateFlag: false,
+                pulling: false,
+                refreshIcon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAB5QTFRFcHBw3Nzct7e39vb2ycnJioqK7e3tpqam29vb////D8oK7wAAAAp0Uk5T////////////ALLMLM8AAABxSURBVHja7JVBDoAgDASrjqj//7CJBi90iyYeOHTPMwmFZrHjYyyFYYUy1bwUZqtJIYVxhf1a6u0R7iUvWsCcrEtwJHp8MwMdvh2amHduiZD3rpWId9+BgPd7Cc2LIkPyqvlQvKxKBJ//Qwq/CacAAwDUv0a0YuKhzgAAAABJRU5ErkJggg==",
+                tabBarLength: 0
+            }
+        },
+        onShow() {
+
+            if (!this.currentId) {
+                return;
+            }
+
+            // 解决返回的时候收藏状态没有同步的问题
+            Api_GetCollectionStatus({businessId: this.currentId}).then(res => {
+
+                // 如果取消收藏了，则删除列表里的记录
+                if (res.data.status === "0") {
+                    this.params.data.splice(this.currentIndex, 1);
+                }
+            });
+        },
+        onLoad() {
+            setTimeout(()=>{
+                this.getList(true);
+            }, 500);
+        },
+        methods: {
+            initData(res) {
+                if (res.statusCode === 1) {
+                    this.params.totalPageNumber = res.data.totalPageNumber;
+                    this.params.totalRecordNumber = res.data.totalRecordNumber;
+                    let resData = res.data.data;
+                    resData.map((news) => {
+                        news["publishDate"] = friendlyDate(news.publishDate);
+                        if (news.title && news.title.length > 45) {
+                            news["title"] = news.title.substring(0, 45) + "...";
+                        }
+                    })
+
+                    if (resData.length) {
+                        if (this.params.requestParams.currentPage <= 1) {
+                            this.params.data = resData;
+                        } else {
+                            this.params.data = this.params.data.concat(resData);
+                        }
+                    }
+                }
+            },
+            getList(flush) {
+
+                // 刷新，从第一页开始
+                if (flush) {
+                    this.params.requestParams.currentPage = 1;
+                }
+
+                Api_GetMyCollectinsList(this.params.requestParams).then(res => {
+                    this.initData(res);
+                    this.params.isLoading = false;
+                }).catch(err => {
+                    console.log(err);
+                    this.params.isLoading = false;
+                });
+
+            },
+            loadMore(e) {
+                if (this.params.requestParams.currentPage >= this.params.totalPageNumber) {
+                    this.params.loadingText = '加载完毕';
+                    return;
+                }
+                setTimeout(() => {
+                    this.params.requestParams.currentPage++;
+                    this.getList(false);
+                }, 500);
+            },
+            clearTabData(e) {
+                this.newsList[e].data.length = 0;
+                this.newsList[e].loadingText = "";
+            },
+            refreshData() {
+                setTimeout(()=>{
+                    this.getList(true);
+                }, 500);
+            },
+            onrefresh(e) {
+                if (!this.params.refreshFlag) {
+                    return;
+                }
+                this.params.refreshing = true;
+                this.params.refreshText = "正在刷新...";
+
+                setTimeout(() => {
+                    this.refreshData();
+                    this.pulling = true;
+                    this.params.refreshing = false;
+                    this.params.refreshFlag = false;
+                    this.params.refreshText = "已刷新";
+                    setTimeout(() => { // TODO fix ios和Android 动画时间相反问题
+                        this.pulling = false;
+                    }, 500);
+                }, 2000);
+            },
+            onpullingdown(e) {
+                if (this.params.refreshing || this.pulling) {
+                    return;
+                }
+                if (Math.abs(e.pullingDistance) > Math.abs(e.viewHeight)) {
+                    this.params.refreshFlag = true;
+                    this.params.refreshText = "释放立即刷新";
+                } else {
+                    this.params.refreshFlag = false;
+                    this.params.refreshText = "下拉可以刷新";
+                }
+            },
+            cancelCollect(businessId, index) {
+                Api_AddCollection(businessId).then(res => {
+                    this.params.isLoading = false;
+                    this.params.data.splice(index, 1);
+                });
+            }
+        }
+    }
+</script>
+
+<style scoped>
+
+    .scroll-v {
+        flex: 1;
+        /* #ifndef MP-ALIPAY */
+        flex-direction: column;
+        /* #endif */
+        width: 750rpx;
+    }
+
+    .refresh {
+        width: 750rpx;
+        height: 64px;
+        justify-content: center;
+    }
+
+    .refresh-view {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .refresh-icon {
+        width: 30px;
+        height: 30px;
+        transition-duration: .5s;
+        transition-property: transform;
+        transform: rotate(0deg);
+        transform-origin: 15px 15px;
+    }
+
+    .loading-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 5px;
+        color: #999999;
+    }
+
+    .loading-text {
+        margin-left: 2px;
+        font-size: 16px;
+        color: #999999;
+    }
+
+    .refresh-icon-active {
+        transform: rotate(180deg);
+    }
+
+    .loading-more {
+        align-items: center;
+        justify-content: center;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        text-align: center;
+    }
+
+    .loading-more-text {
+        font-size: 28rpx;
+        color: #999;
+    }
+
+</style>

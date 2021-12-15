@@ -1,0 +1,544 @@
+{
+  "pages": [
+    {
+      "path": "pages/index",
+      "style": {
+        "navigationBarTitleText": "启动页",
+        "app-plus": {
+          "titleNView": false
+        }
+      }
+    },
+    {
+      "path": "pages/advertisement",
+      "style": {
+        "navigationBarTitleText": "",
+        "app-plus": {
+          "titleNView": false
+        }
+      }
+    },
+    {
+      "path": "pages/browser"
+    },
+    {
+      "path": "pages/welcome",
+      "style": {
+        "navigationBarTitleText": "",
+        "app-plus": {
+          "titleNView": false
+        }
+      }
+    },
+    {
+      "path": "pages/news/index",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/topic/topic",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/faq/index",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/faq/idea-detail",
+      "style": {
+        "navigationBarTitleText": "",
+        "app-plus": {
+          "titleNView": {
+            "buttons": [
+              {
+                "type": "menu",
+                "background": "rgba(255,255,255,0)"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/faq/faq/detail",
+      "style": {
+        "navigationBarTitleText": "",
+        "app-plus": {
+          "titleNView": {
+            "buttons": [
+              {
+                "type": "menu",
+                "background": "rgba(255,255,255,0)"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/faq/faq/answer-detail",
+      "style": {
+        "navigationBarTitleText": "",
+        "app-plus": {
+          "titleNView": {
+            "buttons": [
+              {
+                "type": "menu",
+                "background": "rgba(255,255,255,0)"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/faq/faq/detail-all",
+      "style": {
+        "navigationBarTitleText": "",
+        "app-plus": {
+          "titleNView": {
+            "buttons": [
+              {
+                "type": "menu",
+                "background": "rgba(255,255,255,0)"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/yd-comment/comment-detail",
+      "style": {
+        "navigationBarTitleText": "",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/user-center/user-center",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "app-plus": {
+          "titleNView": {
+            "type": "transparent",
+            "buttons": [{
+              "text": "\ue612",
+              "fontSrc": "static/fonts/uni.ttf",
+              "fontSize": "22px",
+              "background": "rgba(255,255,255,0)"
+            }]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/search/search",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/login/forget-password",
+      "style": {
+        "navigationBarTitleText": "找回密码"
+      }
+    },
+    {
+      "path": "pages/login/bind-phone",
+      "style": {
+        "navigationBarTitleText": "绑定手机号"
+      }
+    },
+    {
+      "path": "pages/thrid-login/thrid-login",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/details/details",
+      "style": {
+        "navigationBarTitleText": "",
+        "app-plus": {
+			"titleNView": {
+				"buttons": [
+					{
+						"type": "menu",
+						"background": "rgba(255,255,255,0)"
+					}
+				]
+			}
+        }
+      }
+    },
+    {
+      "path": "pages/details/ad-details",
+      "style": {
+        "navigationBarTitleText": "",
+        "app-plus": {
+          "titleNView": {
+            "buttons": [
+              {
+                "type": "menu",
+                "background": "rgba(255,255,255,0)"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/404",
+      "style": {
+        "navigationBarTitleText": "出错啦！"
+      }
+    },
+    {
+      "path": "pages/topic/topics/topics",
+      "style": {
+        "navigationBarTitleText": "专家集"
+      }
+    },
+    {
+      "path": "pages/details/baike-detail",
+      "style": {
+        "navigationBarTitleText": "名词解释",
+        "app-plus": {
+          "titleNView": {
+            "buttons": [
+              {
+                "type": "menu",
+                "background": "rgba(255,255,255,0)"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/details/book-detail",
+      "style": {
+        "navigationBarTitleText": "",
+        "app-plus": {
+          "titleNView": {
+            "buttons": [
+              {
+                "type": "menu",
+                "background": "rgba(255,255,255,0)"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/specialist/specialist",
+      "style": {
+		"navigationBarTitleText": "专家集",
+		"app-plus": {
+		  "titleNView": {
+		    "type": "transparent"
+		  }
+		}
+      }
+    },
+    {
+      "path": "pages/user-center/my-focus/zj",
+      "style": {}
+    },
+    {
+      "path": "pages/user-center/my-focus/wt",
+      "style": {}
+    },
+
+    {
+      "path": "pages/user-center/points/points",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/user-center/points/points-rule",
+      "style": {
+        "navigationBarTitleText": "积分规则"
+      }
+    },
+    {
+      "path": "pages/user-center/points/points-list",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/user-center/calendar/calendar",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/user-center/msg-box/msg-box",
+      "style": {
+        "navigationBarTitleText": "我的消息",
+        "app-plus": {
+          "titleNView": {
+            "buttons": [
+              {
+                "text": "\ue600",
+                "fontSrc": "/static/fonts/iconfont.ttf",
+                "fontSize": "22px",
+                "background": "rgba(255,255,255,0)"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/user-center/calendar/signin-rule",
+      "style": {
+        "navigationBarTitleText": "签到规则"
+      }
+    },
+    {
+      "path": "pages/user-center/msg-box/msg-list",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/user-center/msg-box/info",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/user-center/my-article/my-article",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/user-center/my-favorites/my-favorites",
+      "style": {
+        "navigationBarTitleText": "我的收藏"
+      }
+    },
+    {
+      "path": "pages/user-center/my-focus/my-focus",
+      "style": {
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleText": false
+        }
+      }
+    },
+    {
+      "path": "pages/user-center/view-history/view-history",
+      "style": {
+        "navigationBarTitleText": "浏览历史"
+      }
+    },
+    {
+      "path": "pages/user-center/invite-friend/invite-friend",
+      "style": {
+        "navigationBarTitleText": "我的二维码",
+        "app-plus": {
+          "titleNView": {
+            "type": "transparent"
+          }
+        }
+      }
+    },
+    {
+      "path": "pages/user-center/setting/setting",
+      "style": {
+        "navigationBarTitleText": "设置"
+      }
+    },
+    {
+      "path": "pages/user-center/setting/change-password",
+      "style": {
+        "navigationBarTitleText": "修改密码"
+      }
+    },
+    {
+      "path": "pages/user-center/setting/change-phone",
+      "style": {
+        "navigationBarTitleText": "更换手机号"
+      }
+    },
+    {
+      "path": "pages/user-center/setting/info",
+      "style": {
+        "navigationBarTitleText": "账号管理"
+      }
+    },
+    {
+      "path": "pages/user-center/setting/about",
+      "style": {
+        "navigationBarTitleText": "关于源点信用"
+      }
+    },
+    {
+      "path": "pages/user-center/setting/user-services",
+      "style": {
+        "navigationBarTitleText": "用户服务协议"
+      }
+    },
+    {
+      "path": "pages/user-center/setting/user-ys",
+      "style": {
+        "navigationBarTitleText": "隐私政策"
+      }
+    },
+    {
+      "path": "pages/user-center/setting/info-detail",
+      "style": {
+        "navigationBarTitleText": "源点介绍"
+      }
+    },
+    {
+      "path": "pages/user-center/setting/info-func",
+      "style": {
+        "navigationBarTitleText": "源点功能"
+      }
+    },
+    {
+      "path": "pages/user-center/user-info/user-info",
+      "style": {
+        "navigationBarTitleText": "个人信息编辑"
+      }
+    },
+    {
+      "path": "pages/user-center/user-info/edit-username",
+      "style": {
+        "navigationBarTitleText": "修改用户名"
+      }
+    },
+    {
+      "path": "pages/user-center/user-info/edit-introduction",
+      "style": {
+        "navigationBarTitleText": "修改个人简介"
+      }
+    },
+    {
+      "path": "pages/user-center/user-info/edit-company",
+      "style": {
+        "navigationBarTitleText": "修改公司/单位"
+      }
+    },
+    {
+      "path": "pages/user-center/user-auth",
+      "style": {
+        "navigationBarTitleText": "登录确认",
+		"app-plus": {
+		  "titleNView": {
+		    "buttons": [
+				{
+					"type": "none",
+					"text": "关闭",
+					"fontSize": "14px",
+					"background": "rgba(255,255,255,0)"
+				}
+		    ],
+			"autoBackButton": false
+		  }
+		}
+      }
+    }
+      ,{
+            "path" : "pages/user-center/certification-process/index",
+            "style": {
+              "navigationBarTitleText": "身份认证"
+            }
+        }
+    ],
+  "globalStyle": {
+    "pageOrientation": "portrait",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "源点",
+    "navigationBarBackgroundColor": "#d10c0b",
+    "backgroundColor": "#F8F8F8",
+    "backgroundColorTop": "#F4F5F6",
+    "backgroundColorBottom": "#F4F5F6"
+  },
+  "tabBar": {
+    "color": "#656565",
+    "selectedColor": "#2e2e2e",
+    "list": [
+      {
+        "pagePath": "pages/news/index",
+        "iconPath": "static/img/tabbar/ico1.png",
+        "selectedIconPath": "static/img/tabbar/ico1active.png",
+        "text": "资讯"
+      },
+      {
+        "pagePath": "pages/topic/topic",
+        "iconPath": "static/img/tabbar/ico2.png",
+        "selectedIconPath": "static/img/tabbar/ico2active.png",
+        "text": "专栏"
+      },
+      {
+        "pagePath": "pages/faq/index",
+        "iconPath": "static/img/tabbar/ico3.png",
+        "selectedIconPath": "static/img/tabbar/ico3active.png",
+        "text": "问答"
+      },
+      {
+        "pagePath": "pages/user-center/user-center",
+        "iconPath": "static/img/tabbar/ico4.png",
+        "selectedIconPath": "static/img/tabbar/ico4active.png",
+        "text": "我的"
+      }
+    ],
+    "easycom": {
+      "autoscan": true
+    }
+  }
+}

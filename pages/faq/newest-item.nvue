@@ -1,0 +1,148 @@
+<template>
+	<view>
+		<view class="item-panel flex-col">
+			<view class="flex-row" @click="goDetail">
+				<view class="flex-col">
+					<view class="flex-row" style="align-items: center;">
+						<text class="panel-title">{{value.issueTitle}}</text>
+					</view>
+					<view class="user-panel" v-if="value.answerContent">
+						<image class="user-img" :src="value.answerUserHeadPicUrl ? value.answerUserHeadPicUrl : '/static/img/demo1.png'" mode="aspectFill" ></image>
+						<text class="user-info-text">{{value.username}}</text>
+					</view>
+					<text v-else class="panel-content no-content">尚未有人回答</text>
+					<text class="panel-content" v-if="value.answerContent">{{value.answerContent}}</text>
+				</view>
+			</view>
+			<view class="media-info flex-row" @click="goDetail">
+				<text class="info-text">{{value.likeCount|| 0}} 赞同</text>
+				<text class="info-text">·</text>
+				<text class="info-text">{{value.commentCount|| 0}} 评论</text>
+			</view>
+		</view>
+		<view class="space-line"></view>
+	</view>
+</template>
+
+<script>
+	import userFocus from '@/components/user-focus.nvue'
+	import {
+		friendlyDate
+	} from '@/common/js/util.js';
+
+	export default {
+		components:{
+			userFocus
+		},
+		props: {
+		    value: {
+		        type: Object,
+		        default: function(e) {
+		            return {}
+		        }
+		    },
+			active: {
+				type: Number,
+				default: 0
+			},
+			tabIndex: {
+		        type: [Number, String],
+		        default: 0
+		    },
+		},
+		filters: {
+			friendlyDate
+		},
+		methods: {
+			goDetail() {
+				uni.setStorageSync('wd-un-flush', false);
+				uni.navigateTo({
+					url: '/pages/faq/faq/detail?id=' + this.value.id
+				});
+			}
+		}
+	}
+</script>
+
+<style scoped>
+view {
+	display: flex;
+}
+.view {
+	flex-direction: column;
+}
+.flex-col {
+	flex-direction: column;
+}
+.flex-row {
+	flex-direction: row;
+}
+.space-line {
+	background-color: #f7f7f7;
+	height: 20rpx;
+	width: 750rpx;
+}
+.item-panel {
+	background-color: #ffffff;
+	margin-bottom: 17rpx;
+	padding: 35rpx 20rpx 10rpx;
+}
+.panel-title {
+	max-width: 640rpx;
+	font-size: 34rpx;
+	line-height: 44rpx;
+	margin-bottom: 20rpx;
+	color: #000;
+	lines: 1;
+	text-overflow: ellipsis;
+}
+
+.panel-content {
+	width: 710rpx;
+	font-size: 28rpx;
+	line-height: 40rpx;
+	color: #555555;
+	lines: 2;
+	text-overflow: ellipsis;
+}
+.no-content{
+	margin-top: 10rpx;
+	color: #dddddd;
+}
+
+/* 底部数据块 */
+.media-info {
+	flex-direction: row;
+	align-items: center;
+	margin-top: 16rpx;
+}
+.info-text {
+	margin-right: 20rpx;
+	color: #999999;
+	font-size: 24rpx;
+}
+
+/* 用户块 */
+.user-panel{
+	margin-top: 10rpx;
+	margin-bottom: 20rpx;
+	flex-direction: row;
+	align-items: center;
+}
+.user-img{
+	width: 45rpx;
+	height: 45rpx;
+	margin-right: 10rpx;
+	border-radius: 200rpx;
+}
+.user-info-text {
+	margin-right: 20rpx;
+	color: #999999;
+	font-size: 24rpx;
+	lines: 1;
+	text-overflow: ellipsis;
+	width: 500rpx;
+
+}
+
+</style>

@@ -1,0 +1,218 @@
+<template>
+	<list class="scroll-v list" enableBackToTop="true" scroll-y loadmoreoffset="500" @loadmore="loadMore()">
+		<refresh class="refresh" @refresh="onrefresh()" @pullingdown="onpullingdown" :display="refreshing ? 'show' : 'hide'">
+			<div class="refresh-view">
+				<image class="refresh-icon" :src="refreshIcon" :style="{width: (refreshing || pulling) ? 0: '30px'}" :class="{'refresh-icon-active': refreshFlag}"></image>
+				<loading-indicator class="loading-icon" animating="true" v-if="refreshing"></loading-indicator>
+				<text class="loading-text">{{refreshText}}</text>
+			</div>
+		</refresh>
+
+		<!-- list -->
+		<cell>
+			<view class="list-item" v-for="(item, index) in lists.data" :key="index">
+				<user-focus :user-focus='item'></user-focus>
+			</view>
+		</cell>
+
+		<!-- 暂无数据 -->
+		<cell v-if="lists.data.length == 0 && !isLoading">
+			<uni-no-data></uni-no-data>
+		</cell>
+
+		<cell class="loading-more" v-if="isLoading || lists.data.length > 10">
+			<text class="loading-more-text">{{loadingText}}</text>
+		</cell>
+	</list>
+</template>
+
+<script>
+	import userFocus from '@/components/user-focus.nvue';
+	import { Api_GetList } from '@/api/topic.js';
+
+	import mixLoading from '@/components/mix-loading/mix-loading.vue';
+
+	export default {
+		components:{
+			userFocus,
+			mixLoading
+		},
+		data() {
+			return {
+				refreshIcon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAB5QTFRFcHBw3Nzct7e39vb2ycnJioqK7e3tpqam29vb////D8oK7wAAAAp0Uk5T////////////ALLMLM8AAABxSURBVHja7JVBDoAgDASrjqj//7CJBi90iyYeOHTPMwmFZrHjYyyFYYUy1bwUZqtJIYVxhf1a6u0R7iUvWsCcrEtwJHp8MwMdvh2amHduiZD3rpWId9+BgPd7Cc2LIkPyqvlQvKxKBJ//Qwq/CacAAwDUv0a0YuKhzgAAAABJRU5ErkJggg==",
+				refreshing: false,
+				refreshText: '',
+				refreshFlag: false,
+				pulling: false,
+				isLoading: true,
+				loadingText: '',
+				lists: {
+					data: [],
+					requestParams: { // 参数信息
+						currentPage: 1,
+						pageSize: 10
+					},
+					totalPageNumber: 0, // 总页数
+					totalRecordNumber: 0, // 总数量
+				},
+			}
+		},
+		onLoad: function (options) {
+			setTimeout(()=>{
+				this.getList(true);
+			}, 500);
+		},
+		methods: {
+			addFocus(){
+				this.$refs.addFocus()
+			},
+			loadMore(e) {
+				if (this.lists.requestParams.currentPage >= this.lists.totalPageNumber) {
+					this.loadingText = '加载完毕';
+					return;
+				}
+			    setTimeout(() => {
+					this.lists.requestParams.currentPage ++;
+			        this.getList(false);
+			    }, 500);
+			},
+			getList(flush) {
+				// 刷新，从第一页查
+				if (flush) {
+					this.lists.requestParams.currentPage = 1;
+				}
+
+				Api_GetList(this.lists.requestParams).then(res => {
+					this.initData(res);
+					this.isLoading = false;
+				}).catch(err => {
+					console.log(err);
+					this.isLoading = false;
+				});
+			},
+			initData(res) {
+				if (res.statusCode === 1) {
+					this.lists.totalPageNumber = res.data.totalPageNumber;
+					this.lists.totalRecordNumber = res.data.totalRecordNumber;
+					let resData = res.data.data;
+					if (resData.length) {
+						resData.map((data) => {
+						    if (data.showContent && data.showContent.length > 80) {
+						        data["showContent"] = data.showContent.substring(0, 80) + "...";
+						    }
+						});
+						if (this.lists.requestParams.currentPage <= 1) {
+							this.lists.data = resData;
+						} else {
+							this.lists.data = this.lists.data.concat(resData);
+						}
+					}
+				}
+			},
+			clearTabData(e) {
+			    this.lists.data.length = 0;
+			    this.loadingText = "";
+			},
+			refreshData() {
+				setTimeout(()=>{
+					this.getList(true);
+				}, 500);
+			},
+			onrefresh(e) {
+			    if (!this.refreshFlag) {
+			        return;
+			    }
+			    this.refreshing = true;
+			    this.refreshText = "正在刷新...";
+
+			    setTimeout(() => {
+			        this.refreshData();
+			        this.pulling = true;
+			        this.refreshing = false;
+					this.refreshFlag = false;
+			        this.refreshText = "已刷新";
+			        setTimeout(() => { // TODO fix ios和Android 动画时间相反问题
+			            this.pulling = false;
+			        }, 500);
+			    }, 2000);
+			},
+			onpullingdown(e) {
+			    if (this.refreshing || this.pulling) {
+			        return;
+			    }
+			    if (Math.abs(e.pullingDistance) > Math.abs(e.viewHeight)) {
+			        this.refreshFlag = true;
+			        this.refreshText = "释放立即刷新";
+			    } else {
+			        this.refreshFlag = false;
+			        this.refreshText = "下拉可以刷新";
+			    }
+			},
+		}
+	}
+</script>
+
+<style scoped>
+	.scroll-v {
+		flex: 1;
+		/* #ifndef MP-ALIPAY */
+		flex-direction: column;
+		/* #endif */
+		width: 750rpx;
+	}
+	.list-item {
+		padding: 30rpx 20rpx 0 20rpx;
+		background-color: #fff;
+	}
+	.refresh {
+        width: 750rpx;
+        height: 64px;
+        justify-content: center;
+    }
+
+    .refresh-view {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+    }
+
+	.refresh-icon {
+		width: 30px;
+		height: 30px;
+		transition-duration: .5s;
+		transition-property: transform;
+		transform: rotate(0deg);
+		transform-origin: 15px 15px;
+	}
+
+	.refresh-icon-active {
+		transform: rotate(180deg);
+	}
+
+	.loading-icon {
+		width: 20px;
+		height: 20px;
+		margin-right: 5px;
+		color: #999999;
+	}
+
+    .loading-text {
+        margin-left: 2px;
+        font-size: 16px;
+        color: #999999;
+    }
+
+    .loading-more {
+        align-items: center;
+        justify-content: center;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        text-align: center;
+    }
+
+    .loading-more-text {
+        font-size: 28rpx;
+        color: #999;
+    }
+</style>

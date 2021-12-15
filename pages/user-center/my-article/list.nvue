@@ -1,0 +1,334 @@
+<template>
+	<view>
+		<view v-for="(item, index) in listItem" :key="index">
+			<view v-if="item">
+				<view class="media-item flex-col">
+					<view @click="goDetail(item.id)">
+						<text class="media-title" v-if="tabIndex === 1">{{item.issueTitle}}</text>
+						<view class="flex-row" style="align-items: center;">
+							<image v-if="tabIndex === 0" :src="item.headPicUrl? item.headPicUrl: imgUrl" mode="aspectFill" class="head-img"></image>
+							<image v-if="tabIndex === 1 && item.answerContent" :src="item.answerUserHeadPicUrl ? item.answerUserHeadPicUrl : imgUrl"
+							 mode="aspectFill" class="head-img"></image>
+							<view>
+								<text class="nickname" v-if="tabIndex === 0">{{item.username}}</text>
+								<text class="nickname" v-if="tabIndex === 1 && item.answerContent">{{item.answerUsername}}</text>
+								<text class="info-text" v-if="tabIndex === 0">{{item.publishDate | getLocalTime(2)}}</text>
+								<text class="info-text" v-if="tabIndex === 1 && item.answerContent">{{item.answerDate | getLocalTime(2)}}</text>
+							</view>
+						</view>
+						<text class="media-con" v-if="tabIndex === 0 && item.ideaContent">{{item.ideaContent}}</text>
+						<text class="media-con" v-if="tabIndex === 1 && item.answerContent">{{item.answerContent}}</text>
+						<text class="no-content" v-if="tabIndex === 1 && !item.answerContent">尚未有人回答</text>
+						<view class="panel-img-list" v-if="tabIndex === 0 && item.img">
+							<image class="list-img" v-for="(img, index1) in item.img.slice(0,3)" :key="index1" v-show="index1<3" :src="img"
+							 mode="aspectFill" :class="{ 'no-margin': !((index1+1)%3) }"></image>
+						</view>
+					</view>
+					<view class="media-foot flex-row">
+						<view class="media-info flex-row">
+							<view class="media-info-count" @click="goDetail(item.id)">
+								<image src="/static/img/faq/ico1.png" class="imgIco" mode="aspectFill"></image>
+								<text class="info-text" style="margin-right: 43rpx;">{{item.commentCount}}</text>
+							</view>
+							<view class="media-info-count" @click="like(item, index)">
+								<image :src="item.likeStatus ? '/static/img/faq/ico2-1.png' : '/static/img/faq/ico2.png'" class="imgIco" mode="aspectFill"></image>
+								<text class="info-text">{{item.likeCount}}</text>
+							</view>
+							<uni-icons class="media-info-count" type="trash" size="12" color="#999999" style="margin-left: 10px;" @click="delItem(item.id, tabIndex, index)"></uni-icons>
+						</view>
+					</view>
+				</view>
+				<view class="space-line"></view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		friendlyDate,
+		getLocalTime
+	} from '@/common/js/util.js';
+	import {
+		Api_GetLikeSave,
+		Api_DelItem
+	} from '@/api/faq.js'
+
+	export default {
+		props: {
+			listItem: {
+				type: Array,
+				default: function(e) {
+					return []
+				}
+			},
+			tabIndex: {
+				type: Number,
+			}
+		},
+		filters: {
+			friendlyDate,
+			getLocalTime
+		},
+		data() {
+			return {
+				imgUrl: '/static/img/demo1.png'
+			}
+		},
+		methods: {
+			delItem(id, tabIndex, index){
+				// tabIndex: 0想法 1提问 2回答
+				let type = '';
+				switch(tabIndex) {
+					case 1:
+						type = 'issue'
+						break;
+					case 2:
+						type = 'answer'
+						break;
+					default:
+						type = 'idea'
+				}
+				let _this = this;
+				uni.showModal({
+				    title: '提示',
+				    content: "确定永久删除吗？",
+				    success: function(res) {
+				        if (res.confirm) {
+							Api_DelItem({id: id}, type).then(res => {
+								if(res.statusCode === 1) {
+									_this.listItem = _this.listItem.splice(index, 1);
+								}
+							})
+				        } else if (res.cancel) {
+				            console.log('用户点击取消');
+							return
+				        }
+				    }
+				});
+				
+			},
+			click() {
+				this.$emit('click');
+			},
+			close(e) {
+				e.stopPropagation();
+				this.$emit('close');
+			},
+			goDetail(id) {
+				if (id) {
+					var url = '';
+					if (this.tabIndex === 0) {
+						url = '/pages/faq/idea-detail?id=' + id;
+					} else if (this.tabIndex === 1) {
+						url = '/pages/faq/faq/detail?id=' + id;
+					}
+					if (url) {
+						uni.navigateTo({
+							url: url
+						});
+					}
+				}
+			},
+			like(item, index) {
+				// 如果 我的提问没人回答，则不能点赞
+				if (this.tabIndex === 1) {
+					if (!item.answerId || !item.answerUserId) {
+						return;
+					}
+				}
+				var id = (this.tabIndex === 0) ? item.id : item.answerId;
+				var type = (this.tabIndex === 0) ? '3' : '1';
+				var userId = (this.tabIndex === 0) ? item.userId : item.answerUserId;
+				Api_GetLikeSave({
+					businessId: id,
+					businessType: type,
+					userId: userId
+				}).then(res => {
+					if (res.statusCode === 1) {
+						this.listItem[index].likeStatus = !item.likeStatus;
+						this.listItem[index].likeCount = res.data;
+					}
+				});
+			},
+		}
+	}
+</script>
+
+<style scoped>
+	view {
+		display: flex;
+	}
+
+	.view {
+		flex-direction: column;
+		background-color: #fff;
+		margin-bottom: 20rpx;
+	}
+
+	.flex-row {
+		flex-direction: row;
+	}
+
+	.flex-col {
+		flex-direction: column;
+	}
+
+	.list-cell {
+		padding: 0 30rpx;
+	}
+
+	.uni-list-cell-hover {
+		background-color: #eeeeee;
+	}
+
+	.media-item {
+		position: relative;
+		flex: 1;
+		flex-direction: column;
+		padding: 30rpx 15rpx;
+	}
+
+	.media-info-box {
+		flex: 1;
+	}
+
+	.media-title {
+		flex: 1;
+		font-size: 30rpx;
+		color: #000000;
+		margin-bottom: 16rpx;
+		line-height: 40rpx;
+	}
+
+	.media-title2 {
+		flex: 1;
+		lines: 2;
+		text-overflow: ellipsis;
+		margin-top: 6rpx;
+		line-height: 40rpx;
+	}
+
+	.media-title3 {
+		flex: 1;
+		lines: 3;
+		text-overflow: ellipsis;
+		margin-top: 6rpx;
+		line-height: 40rpx;
+	}
+
+	.media-con {
+		flex: 1;
+		font-size: 28rpx;
+		color: #555555;
+		margin-top: 16rpx;
+		line-height: 40rpx;
+		lines: 3;
+		text-overflow: ellipsis;
+	}
+
+	.media-con3 {
+		flex: 1;
+		lines: 3;
+		text-overflow: ellipsis;
+	}
+
+	.media-info {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.info-text {
+		margin-right: 20rpx;
+		color: #999999;
+		font-size: 20rpx;
+		line-height: normal;
+	}
+
+	.media-foot {
+		margin-top: 10rpx;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.head-img {
+		width: 64rpx;
+		height: 64rpx;
+		margin-right: 10rpx;
+		border-radius: 200rpx;
+	}
+
+	.nickname {
+		font-size: 30rpx;
+		color: #000;
+		width: 636rpx;
+		lines: 1;
+		text-overflow: ellipsis;
+	}
+
+	.img-row {
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.img {
+		width: 225rpx;
+		height: 142rpx;
+	}
+
+	.views {
+		align-items: center;
+	}
+
+	.views-num {
+		margin-left: 10rpx;
+		color: #a3a3a3;
+		font-size: 24rpx;
+	}
+
+	.imgIco {
+		height: 24rpx;
+		width: 26rpx;
+		margin-right: 10rpx;
+	}
+
+	.panel-img-list {
+		margin-top: 20rpx;
+		/* padding-left: 10rpx;
+		padding-right: 10rpx; */
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+	}
+
+	.list-img {
+		width: 223rpx;
+		height: 140rpx;
+		margin-right: 13rpx;
+	}
+
+	.no-margin {
+		margin-right: 0rpx;
+	}
+
+	.media-info-count {
+		flex-direction: row;
+		align-items: center;
+		margin-right: 10rpx;
+		padding-top: 10rpx;
+	}
+
+	.no-content {
+		width: 710rpx;
+		font-size: 24rpx;
+		text-overflow: ellipsis;
+		color: #CCCCCC;
+	}
+
+	.space-line {
+		background-color: #f7f7f7;
+		height: 20rpx;
+		width: 750rpx;
+	}
+</style>

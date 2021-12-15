@@ -1,0 +1,319 @@
+<template>
+	<view class="">
+		<!-- #ifdef APP-PLUS -->
+		<view class="status_bar"><view class="top_view"></view></view>
+		<!-- #endif -->
+		<uni-nav-bar title="积分任务"  @clickLeft="backClick" @clickRight="ruleClick" :fixed="true" statusBar="true" left-icon="arrowleft" color="#FFFFFF" background-color="#ff7d5b">
+			<view slot="right">
+				<text class="rule-text" @click="signInRule()">签到规则</text>
+			</view>
+		</uni-nav-bar>
+
+		<view class="signin-panel">
+			<view class="signin-top">
+				<image class="top-bg" src="/static/img/ucenter/calendar/bg.png" mode=""></image>
+				<view class="top-waves">
+					<image class="w1" src="/static/img/ucenter/calendar/w1.png" mode=""></image>
+					<image class="w2" src="/static/img/ucenter/calendar/w2.png" mode=""></image>
+					<image class="w3" src="/static/img/ucenter/calendar/w3.png" mode=""></image>
+				</view>
+				<view class="top-shadow"></view>
+				<view class="sign-btn" @click="signInCkick">
+					<view class="sign-border">
+						<text class="sign-t1"> {{ isCheckIn ? '已签到' : '签到' }}  </text>
+						<text class="sign-t2">连续 {{ checkInDays }} 天</text>
+					</view>
+				</view>
+			</view>
+
+			<view class="sign-calendar">
+				<uni-calendar :selected="info.selected" :showMonth="false" @change="change" @monthSwitch="monthSwitch" />
+			</view>
+		</view>
+
+	</view>
+</template>
+
+<script>
+	import uniCalendar from '@/components/uni-calendar/uni-calendar.vue'
+	import {dateFormat, showScore} from '@/utils/index.js'
+	import {
+		Api_AddCheckin,
+		Api_GetCheckin,
+		Api_GetCheckInDates
+	} from '@/api/userCenter.js'
+	export default {
+		filters:{
+			dateFormat
+		},
+	    components: {
+	        uniCalendar
+	    },
+	    data() {
+	        return {
+				userInfo:{},
+				isCheckIn:false,
+				isToday:true,
+				fullDate:'',
+				checkInDays:0,
+				info: {
+					lunar: true,
+					range: true,
+					insert: false,
+					selected: []
+				}
+			};
+	    },
+		onReady() {
+			Api_GetCheckin().then(cres =>{
+				this.checkInDays = cres.data.checkInDays;
+				const curDate = new Date();
+				this.fullDate = dateFormat(curDate,'yyyy-MM-dd');
+				this.curCheckInDates(dateFormat(curDate,'yyyy-MM'));
+			})
+		},
+	    methods: {
+			signInRule() {
+				uni.navigateTo({
+					url: 'signin-rule'
+				});
+			},
+			backClick(){
+				uni.navigateBack({
+				    delta: 1
+				});
+			},
+			ruleClick(){
+
+			},
+			signInCkick(){
+				let _self = this;
+				let isSuccess = false;
+				let score = 0;
+				
+				if(!_self.isCheckIn){
+					if(_self.isToday){
+						Api_AddCheckin().then(cres =>{
+							if(cres.statusCode === 1){
+								// showScore(cres.data.score);
+								_self.info.selected.push({
+									date: this.fullDate,
+								});
+								_self.isCheckIn = true;
+								this.checkInDays = cres.data.checkInDays;
+								isSuccess = true;
+								score = cres.data.score;
+							}
+						}).catch(err =>{
+							uni.showToast({
+								icon: 'none',
+								title: '签到失败',
+								duration: 2000
+							});
+						})
+					}
+				}else{
+					uni.showToast({
+						icon: 'none',
+						title: '您已经签到过了',
+						duration: 2000
+					});
+				}
+				
+				setTimeout(() =>{
+					if(isSuccess){
+						uni.showToast({
+							title: '获得积分+' + score,
+							duration: 2000,
+							image: '/static/img/fa.png'
+						});
+					}
+				},500)
+				
+			},
+			curCheckInDates(date){
+				const _self = this;
+				Api_GetCheckInDates({
+					date:date
+				}).then(res =>{
+					if(res.statusCode ===1){
+						res.data.forEach((item)=>{
+							let cdate = dateFormat(item.checkDate,'yyyy-MM-dd')
+							if(this.fullDate == cdate){
+								this.isCheckIn = true;
+							}
+							_self.info.selected.push({date:cdate})
+						})
+					}
+				})
+			},
+			change(e) {
+				console.log('change 返回:', e)
+				this.isToday = this.todayCompare(e.year,e.month,e.date);
+			},
+			confirm(e) {
+				console.log('confirm 返回:', e)
+			},
+			monthSwitch(e) {
+				console.log('monthSwitchs 返回:', e);
+				this.curCheckInDates(e.year + '-' + (Array(2).join('0') + e.month).slice(-2))
+			},
+			todayCompare(year,mounth,day){
+				const curDate = new Date();
+				let curYear = curDate.getFullYear();
+				let curMounth = curDate.getMonth()+1;
+				let curDay = curDate.getDate();
+				return (year === curYear)&&(mounth === (Array(2).join('0') + curMounth).slice(-2))&&(day === curDay);
+			},
+
+	    }
+	};
+</script>
+
+
+<style scoped>
+.rule-text{
+	color: #FFFFFF;
+	font-size: 30rpx;
+}
+.sign-panel {
+	/* #ifndef APP-NVUE */
+	display: flex;
+	/* #endif */
+	align-items: center;
+	flex-direction: column;
+}
+.signin-top {
+	position: relative;
+	width: 750rpx;
+	height: 480rpx;
+}
+
+.top-bg {
+	width: 750rpx;
+	height: 480rpx;
+}
+
+.top-waves {
+	position: absolute;
+	bottom: 0;
+	width: 750rpx;
+	height: 123rpx;
+	overflow: hidden;
+}
+
+.w1 {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 850rpx;
+	height: 123rpx;
+	left: 0;
+	right: 0;
+	animation: w1 3s ease-in infinite;
+}
+@keyframes w1{
+	0%   {right: 10rpx;}
+	25%  {left: -13rpx;}
+	50%  {right: 12rpx;}
+	75%  {left: -10rpx;}
+	100% {right: 11rpx;}
+}
+.w2 {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	width: 800rpx;
+	height: 123rpx;
+	animation: w2 1.3s ease-in infinite;
+}
+@keyframes w2{
+	0%   {left: -50rpx;}
+	25%  {right: 13rpx;}
+	50%  {left: -62rpx;}
+	75%  {right: 10rpx;}
+	100% {left: -51rpx;}
+}
+.w3 {
+	position: absolute;
+	bottom: 0;
+	width: 850rpx;
+	height: 123rpx;
+	left: 0;
+	right: 0;
+	animation: w3 2.5s ease-in infinite;
+}
+@keyframes w3{
+	0%   {right: 10rpx;}
+	25%  {left: -13rpx;}
+	50%  {right: 12rpx;}
+	75%  {left: -10rpx;}
+	100% {right: 11rpx;}
+}
+.top-shadow {
+	position: absolute;
+	background-color: #fff;
+	left: 250rpx;
+	top: 80rpx;
+	right: 0;
+	bottom: 0;
+	border-radius: 100px;
+	width: 240rpx;
+	height: 240rpx;
+	background-color: rgba(255,255,255,.3);
+	justify-content: center;
+	align-items: center;
+	animation: circle-ring 5s ease-in infinite;
+}
+
+@keyframes circle-ring{
+	0%   {transform: scale(0.98);}
+	25%  {transform: scale(1.03);}
+	50%  {transform: scale(0.98);}
+	75%  {transform: scale(1.05);}
+	100% {transform: scale(0.98);}
+}
+.sign-btn {
+	position: absolute;
+	background-color: #fff;
+	border-radius: 100px;
+	left: 253rpx;
+	top: 82rpx;
+	width: 220rpx;
+	height: 220rpx;
+	margin: 10rpx;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+}
+.sign-border {
+	margin: 10rpx;
+	border-radius: 100px;
+	width: 200rpx;
+	height: 200rpx;
+	border-width: 2rpx;
+	border-color: #cd0303;
+	border-style: solid;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+}
+.sign-t1 {
+	font-size: 34rpx;
+	color: #cd0303;
+	border-bottom-width: 2rpx;
+	border-color: #cd0303;
+	border-bottom-style: solid;
+	width: 160rpx;
+	text-align: center;
+	padding-bottom: 20rpx;
+}
+.sign-t2 {
+	padding-top: 20rpx;
+	font-size: 24rpx;
+	color: #cd0303;
+	text-align: center;
+}
+</style>

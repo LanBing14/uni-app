@@ -1,0 +1,157 @@
+<template>
+    <view>
+        <uni-swipe-action>
+            <view v-for="(item, index) in itemList1" :key="index">
+                    <uni-swipe-action-item :options="options" @click="cancelAttention(item.id, index)">
+                        <view class="list-item">
+                            <view class="flex-row" style="align-items: center; justify-content: space-between; margin-top: 20rpx;" @click="goDetail(item.id, index)">
+                                <image class="head-img" :class="item.intro?'head-img2':''" :src="item.headPicUrl?item.headPicUrl:imgUrl" mode="aspectFill"></image>
+                                <view class="flex-col" style="width: 630rpx;">
+                                    <view class="flex-row" style="align-items: center;">
+                                        <text class="name">{{item.expertName}}</text>
+                                        <text class="itag" v-if="item.expertTitle">{{item.expertTitle}}</text>
+                                    </view>
+                                    <text class="utag">{{item.expertIntro}}</text>
+                                </view>
+                            </view>
+                        </view>
+                    </uni-swipe-action-item>
+            </view>
+        </uni-swipe-action>
+        </view>
+
+</template>
+
+<script>
+    import uniSwipeAction from '@/components/uni-swipe-action/uni-swipe-action.vue'
+    import uniSwipeActionItem from '@/components/uni-swipe-action-item/uni-swipe-action-item.vue'
+    import item from '@/components/user-focus.nvue';
+    import {
+        Api_GetAttentionAdd
+    } from '@/api/faq.js';
+
+    export default {
+        props: {
+            itemList1: {
+                type: Object,
+                default: function(e) {
+                    return {}
+                }
+            }
+        },
+        components:{
+            uniSwipeAction,
+            uniSwipeActionItem,
+            item
+        },
+        data() {
+            return {
+                imgUrl: '/static/img/demo1.png',
+                options: [
+                    {
+                        text: '取消关注',
+                        style: {
+                            backgroundColor: '#dd524d'
+                        }
+                    }
+                ]
+            }
+        },
+        methods: {
+            cancelAttention(businessId, index) {
+                // 点击关注的时候，储存点击状态和点击的id
+                this.$store.dispatch('clickBtn')
+                this.$store.dispatch('setId', businessId)
+                Api_GetAttentionAdd({businessId: businessId}).then(res => {
+                    this.itemList1.splice(index, 1);
+                    // 接口成功后初始化store里的内容
+                    this.$store.dispatch('setId', '')
+                    this.$store.dispatch('clickBtn', false)
+                });
+            },
+            goDetail(businessId, index){
+                this.$parent.$parent.$parent.currentId =  businessId;
+                this.$parent.$parent.$parent.currentIndex =  index;
+                uni.navigateTo({
+                    url: '/pages/specialist/specialist?expertId=' + businessId
+                });
+            }
+        }
+    }
+</script>
+
+<style scoped>
+    .scrollbar ::-webkit-scrollbar {
+        display: none;
+        width: 0 !important;
+        height: 0 !important;
+        -webkit-appearance: none;
+        background: transparent;
+    }
+    .list-item {
+        padding: 20rpx 20rpx;
+        background-color: #fff;
+    }
+
+    view {
+        display: flex;
+    }
+    .flex-col {
+        flex-direction: column;
+    }
+    .flex-row {
+        flex-direction: row;
+    }
+    .head-img {
+        width: 67rpx;
+        height: 67rpx;
+        margin-right: 10rpx;
+        justify-content: center;
+        align-items: center;
+        border-radius: 200rpx;
+    }
+    .head-img2 {
+        width: 94rpx;
+        height: 94rpx;
+    }
+    .name {
+        font-size: 30rpx;
+        color: #000;
+    }
+    .utag {
+        lines: 2;
+        text-overflow: ellipsis;
+        font-size: 24rpx;
+        color: #787878;
+        line-height: 34rpx;
+		margin-top: 10rpx;
+    }
+    .add-focus {
+        width: 97rpx;
+        height: 40rpx;
+        line-height: 40rpx;
+        border-radius: 10rpx;
+        color: #ce0201;
+        font-size: 24rpx;
+        text-align: center;
+        border-width: 2rpx;
+        border-color: #ce0201;
+        border-style: solid;
+    }
+    .already,
+    .add-focus:active {
+        background-color: #ce0201;
+        color: #fff;
+    }
+    .itag {
+        font-size: 20rpx;
+        color: #ce0201;
+        text-align: center;
+        border-width: 2rpx;
+        border-color: #ce0201;
+        border-style: solid;
+        background-color: #fdf2f2;
+        padding: 0 10rpx;
+        margin-left: 10rpx;
+    }
+</style>

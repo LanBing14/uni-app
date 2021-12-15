@@ -1,0 +1,60 @@
+<template>
+	<view>
+		<swiper 
+		class="hot-list"
+		:indicator-dots="false" 
+		:autoplay="true" 
+		:interval="3000" 
+		:duration="1000" 
+		:circular="true"
+		:vertical="true"
+		>
+			<swiper-item v-for="(item, index) in hotlist" :key="index">
+				<view class="hot-item" @click="itemClick(item)"> 
+					<text class="hot-text">{{ item.keyword }}</text> 	
+				</view>
+			</swiper-item>
+		</swiper>
+	</view>
+</template>
+<script>
+	export default {
+		data() {
+			return {
+			};
+		},
+		props: {
+			hotlist: {
+				type: Array,
+				default: function(e) {
+					return [];
+				}
+			},
+		},
+		methods: {
+			backClick() {
+				uni.navigateBack({
+					delta: 1
+				});
+			},
+			itemClick(item){
+				this.$emit('click', item);
+			}
+		}
+	};
+</script>
+
+<style>
+	.hot-list{
+		flex: 1;
+		height: 50rpx;
+	}
+	.hot-item{
+		margin-top: 10rpx;
+		align-items: flex-start;
+	}
+	.hot-text{
+		color: #b7b9bc;
+		font-size: 30rpx;
+	}
+</style>

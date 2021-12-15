@@ -1,0 +1,117 @@
+<template>
+	<uni-nav-bar class="search-bar" :leftShow="false" :rightShow="false" background-color="#d51e1e" statusBar="true">
+		<view class="search-content">
+			<view class="search-icon" @click="searchClick">
+				<uni-icons class="input-uni-icon" type="search" size="18" color="#b7b9bc" />
+			</view>
+			<view @click="searchClick">
+				<text class="hot-text">大家都在搜:</text>
+			</view>
+			<view class="search-swiper">
+				<swiper 
+				class="hot-list"
+				:indicator-dots="false" 
+				:autoplay="true" 
+				:interval="3000" 
+				:duration="1000" 
+				:circular="true"
+				:vertical="true"
+				>
+					<swiper-item v-for="(item, index) in hotlist" :key="index">
+						<view class="hot-item"  @click="searchClick">
+							<text class="hot-text">{{ filterLen(item.keyword) }}</text>
+						</view>
+					</swiper-item>
+				</swiper>
+			</view>
+		</view>
+	    <view class="search-left" slot="left">left</view>
+		<view slot="right">right</view>
+	</uni-nav-bar>
+</template>
+
+<script>
+	import uniNavBar from '@/components/uni-nav-bar/uni-nav-bar.vue';
+	import {Api_GetHotsearchList} from '@/api/search.js';
+	export default {
+		components: {
+			uniNavBar
+		},
+		data() {
+			return {
+				hotlist: [],
+			};
+		},
+		mounted(){
+			Api_GetHotsearchList().then(res=>{
+				console.log(res)
+				if(res.statusCode === 1){
+					if(res.data.length > 0){
+						this.hotlist = res.data;
+					}
+				}
+			})
+		},
+		methods: {
+			filterLen(keyword){
+				if(keyword.length > 5){
+					return keyword.substring(0,5) + '...'
+				}else{
+					return keyword
+				}
+			},
+			searchClick(){
+				uni.navigateTo({
+					url: '/pages/search/search'
+				});
+				
+			},
+		}
+	}
+</script>
+
+<style scoped>
+	.uni-navbar__header-btns{
+		width: 0;
+	}
+	.uni-navbar__header-btns-left{
+		width: 0;
+	}
+	.search-content{
+		flex: 1;
+		background-color: #ffffff;
+		border-radius: 14rpx;
+		margin: 0 14rpx;
+		padding: 10rpx 0;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+	.search-right{
+		width: 0;
+	}
+	.search-icon{
+		flex: 1;
+		align-items: flex-end;
+		justify-content: flex-end;
+		margin-right: 10rpx;
+	}
+	.search-swiper{
+		flex: 1.2;
+		justify-content: flex-start;
+	}
+	.hot-list{
+		flex: 1;
+		height: 50rpx;
+	}
+	.hot-item{
+		height: 50rpx;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-start;
+	}
+	.hot-text{
+		color: #b7b9bc;
+		font-size: 28rpx;
+	}
+</style>

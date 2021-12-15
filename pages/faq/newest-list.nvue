@@ -1,0 +1,116 @@
+<template>
+	<mescroll-uni ref="mescrollRef" @init="mescrollInit" :down="downOption" @down="downCallback" :up="upOption" @up="upCallback">
+		<uni-cell v-for="(ditem, dindex) in dataList" :key="dindex +'-newest'" v-if="dataList.length > 0">
+			<recommend-item-wd v-model="dataList[dindex]"></recommend-item-wd>
+		</uni-cell>
+		<view v-if="showNoData">
+			<faq-nodata></faq-nodata>
+		</view>
+	</mescroll-uni>
+</template>
+
+<script>
+import MescrollMixin from '@/components/mescroll-uni/mescroll-mixins.js';
+import MescrollMoreItemMixin from '@/components/mescroll-uni/mixins/mescroll-more-item.js';
+import uniCell from '@/components/uni-cell.vue';
+import FaqNodata from './faq-nodata.nvue';
+import RecommendItemWd from './faq/recommend-item-wd.nvue';
+import {
+	Api_GetNewestList
+} from '@/api/faq.js';
+export default {
+	mixins: [MescrollMixin,MescrollMoreItemMixin],
+	components: {
+		uniCell,
+		RecommendItemWd,
+		FaqNodata
+	},
+	props: {
+		keyword: String,
+		index: {
+			type: [Number, String],
+			default: ''
+		},
+		value: {
+			type: [String, Number],
+			default() {
+				return 0;
+			}
+		},
+	},
+	data() {
+		return {
+			itemType: this.index,
+			downOption: {
+				auto: true,
+				textInOffset: '下拉刷新',
+				textOutOffset: '释放更新',
+				textLoading: '加载中 ...'
+			},
+			upOption: {
+				auto: true,
+				textLoading: '加载中 ...',
+				textNoMore: '-- 没数据了 --',
+				toTop: {
+					src: "/static/img/search/top.png", // 图片路径
+					width: '95rpx',
+				},
+				page: {
+					num: 0,
+					size: 10
+				},
+				empty: { use: false }
+			},
+			showNoData: false,
+			dataList: [],
+			currentPage: 1,
+			totalPageNumber: 0
+		};
+	},
+	watch: {
+		keyword(val) {
+			this.loadListData(1);
+		},
+		value(val) {
+			this.loadListData(1);
+		}
+	},
+	methods: {
+		loadListData() {
+			// uni.showLoading();
+			Api_GetNewestList({
+				currentPage: this.currentPage,
+				pageSize: 10
+			}).then(curPageData => {
+				let list = curPageData.data.data;
+				// uni.hideLoading();
+				if (this.currentPage === 1) {
+					this.dataList = [];
+				}
+				// this.totalPageNumber = curPageData.totalPageNumber;
+				this.dataList = this.dataList.concat(list);
+				this.showNoData = !this.dataList.length;
+				// 数据渲染完毕再隐藏加载状态
+				this.$nextTick(() => {
+					this.mescroll.endSuccess(list.length);
+				});
+			})
+			.catch(() => {
+				uni.hideLoading();
+				this.mescroll.endErr();
+			});
+		},
+		/*下拉刷新的回调 */
+		downCallback() {
+			this.mescroll.resetUpScroll();
+		},
+		/*上拉加载的回调 */
+		upCallback(page) {
+			console.log(page.num)
+			this.currentPage = page.num;
+			this.loadListData();
+		},
+	}
+};
+</script>
+

@@ -1,0 +1,247 @@
+<template>
+	<mescroll-uni ref="mescrollRef" @init="mescrollInit" :down="downOption" @down="downCallback" :up="upOption" @up="upCallback">
+		<uni-cell v-for="(item, index) in dataList" :key="index" v-if="dataList.length > 0">
+			<view class="idea-panel">
+				<view class="panel-top">
+					<image class="user-img" src="/static/img/demo1.png" mode=""></image>
+					<view>
+						<text class="user-name">信用小白</text>
+						<text class="user-time">2020-20-20</text>
+					</view>
+				</view>
+				<view class="panel-content pdT0 pdB0">
+					<text class="content-title ">
+						内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容
+					</text>
+					<view class="content-comment pdB0">
+						<view class="comment-item">
+							<text class="item-content">
+								回复回复回复回复回复回复回复回复回复回复回复回复回复回复回复回复回复回
+							</text>
+							<view class="user-tool">
+								<view class="tool-comment">
+									<image class="comment-img" src="/static/img/faq/ico1.png" mode=""></image>
+									<text class="praise-count">999</text>
+								</view>
+								<view class="tool-praise">
+									<image class="praise-img" src="/static/img/faq/ico2.png" mode=""></image>
+									<text class="praise-count">999</text>
+								</view>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+		</uni-cell>
+
+		<view class="no-data" v-if="isNoData">
+			<image class="data-img" src="/static/img/search/nodata.png" mode=""></image>
+			<p>暂无评论</p>
+		</view>
+	</mescroll-uni>
+</template>
+
+<script>
+import MescrollMixin from '@/components/mescroll-uni/mescroll-mixins.js';
+import MescrollMoreItemMixin from '@/components/mescroll-uni/mixins/mescroll-more-item.js';
+import uniCell from '@/components/uni-cell.vue';
+export default {
+	mixins: [MescrollMixin, MescrollMoreItemMixin], // 注意此处还需使用MescrollMoreItemMixin (必须写在MescrollMixin后面)
+	components: {
+		uniCell
+	},
+	data() {
+		return {
+			downOption: {
+				auto: true // 不自动加载 (mixin已处理第一个tab触发downCallback)
+			},
+			upOption: {
+				auto: true, // 不自动加载
+				// page: {
+				// 	num: 0, // 当前页码,默认0,回调之前会加1,即callback(page)会从1开始
+				// 	size: 10 // 每页数据的数量
+				// },
+				empty: { use: false }
+			},
+			dataList: [
+				{
+					title: '标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题题标题标题标题标题标题标题标题',
+					desc: '简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介简介',
+					time: '2010-10-10'
+				}
+			],
+			isNoData: false
+		};
+	},
+	props: {
+		value: {
+			type: Object,
+			default: {}
+		}
+	},
+	methods: {
+		/*下拉刷新的回调 */
+		downCallback() {
+			// 这里加载你想下拉刷新的数据, 比如刷新轮播数据
+			// 下拉刷新的回调,默认重置上拉加载列表为第一页 (自动执行 page.num=1, 再触发upCallback方法 )
+			this.mescroll.resetUpScroll();
+		},
+		/*上拉加载的回调: 其中page.num:当前页 从1开始, page.size:每页数据条数,默认10 */
+		upCallback(page) {
+			this.mescroll.endSuccess(this.dataList.length);
+		}
+	}
+};
+</script>
+<style scoped>
+.list-cell {
+	padding: 0 30rpx;
+}
+
+.uni-list-cell-hover {
+	background-color: #eeeeee;
+}
+
+.pdT0 {
+	padding-top: 0 !important;
+}
+.pdB0 {
+	padding-bottom: 0 !important;
+}
+.idea-page {
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: flex-start;
+}
+.space-line {
+	background-color: #f7f7f7;
+	height: 20rpx;
+	margin-top: 40rpx;
+}
+.top-share {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.panel-top {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	padding: 24rpx 20rpx 0 20rpx;
+}
+.user-img {
+	width: 64rpx;
+	height: 64rpx;
+	margin-right: 16rpx;
+	border-radius: 200rpx;
+}
+.user-name {
+	color: #000000;
+	line-height: 1.4;
+	font-size: 26rpx;
+	lines: 1;
+	text-overflow: ellipsis;
+	width: 500rpx;
+}
+.user-time {
+	color: #999999;
+	font-size: 24rpx;
+}
+.share-img {
+	width: 38rpx;
+	height: 39rpx;
+}
+.user-tool {
+	flex: 1;
+	margin: 10rpx 0;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-end;
+}
+.tool-praise,
+.tool-comment,
+.tool-time{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+.tool-time{
+	flex: 1;
+}
+.praise-img,
+.comment-img {
+	width: 26rpx;
+	height: 24rpx;
+	margin-right: 10rpx;
+	margin-left: 38rpx;
+}
+.praise-count {
+	font-size: 24rpx;
+	color: #999999;
+}
+.panel-content {
+	padding: 16rpx 20rpx 10rpx;
+}
+.content-title {
+	font-size: 26rpx;
+	color: #262626;
+	overflow: hidden;
+	text-overflow: -o-ellipsis-lastline;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+.comment-list {
+	flex: 1;
+	background-color: #f7f7f7;
+}
+.comment-content {
+	padding-left: 0;
+	padding-bottom: 18rpx;
+	margin-left: 100rpx;
+	border-bottom-color: #e2e2e2;
+	border-bottom-width: 1px;
+}
+.content-comment{
+	margin-top: 20rpx;
+	padding:15rpx 20rpx;
+	background-color: #f7f7f7;
+}
+.comment-item{
+	margin-bottom: 8rpx;
+}
+.item-user{
+	font-size: 24rpx;
+	color: #ce0201;
+	margin-right: 10rpx;
+}
+.item-content{
+	font-size: 24rpx;
+	color: #4b4b4b;
+	line-height: 1.5;
+}
+.comment-count{
+	font-size: 26rpx;
+	color: #ce0201;
+}
+
+.no-data {
+	text-align: center;
+}
+.no-data .data-img {
+	width: 489rpx;
+	height: 451rpx;
+	margin-top: 136rpx;
+	margin-bottom: 32rpx;
+}
+.no-data p {
+	font-size: 30rpx;
+	color: #999999;
+}
+</style>

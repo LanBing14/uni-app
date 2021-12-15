@@ -1,0 +1,200 @@
+<template>
+	<view>
+		<view v-for="(item,index) in listItem" :key="index">
+			<view class="media-item view" v-if="item" @click="click">
+				<view class="view">
+					<view class="media-info-box flex-col">
+						<text class="media-title" v-if="item.issueTitle">{{item.issueTitle}}</text>
+						<view class="flex-row" style="align-items: center;">
+							<image :src="item.headPicUrl? item.headPicUrl: imgUrl" mode="aspectFill" class="head-img"></image>
+							<view>
+								<text class="nickname">{{item.username}}</text>
+								<text class="info-text">{{item.publishDate | friendlyDate}}</text>
+							</view>
+						</view>
+						<text class="media-con" :class="{'media-con2': tabIndex === 2}">{{item.issueDesc}}</text>
+						<view v-if="tabIndex === 2 && item.img">
+							<view class="flex-row img-row" style="justify-content: space-between;" v-for="(i,index) in item.img" :key="index">
+								<image :src="i.url" mode="aspectFill" class="img"></image>
+							</view>
+						</view>
+
+						<view class="media-foot flex-row" v-if="tabIndex === 2">
+							<view class="media-info flex-row">
+								<image src="/static/img/faq/ico1.png" class="imgIco" mode="aspectFill"></image>
+								<text class="info-text" style="margin-right: 43rpx;">{{item.commentCount}}</text>
+								<image src="/static/img/faq/ico2.png" class="imgIco" mode="aspectFill"></image>
+								<text class="info-text">{{item.likeCount}}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		friendlyDate
+	} from '@/common/js/util.js';
+
+    export default {
+        props: {
+            listItem: {
+                type: Array,
+                default: function(e) {
+                    return []
+                }
+            },
+			tabIndex: {
+				type: Number,
+			}
+        },
+		filters: {
+			friendlyDate
+		},
+		data(){
+			return {
+				imgUrl: '/static/img/demo1.png'
+			}
+		},
+		methods: {
+            click() {
+                this.$emit('click');
+            },
+            close(e) {
+                e.stopPropagation();
+                this.$emit('close');
+            }
+        }
+    }
+</script>
+
+<style scoped>
+	view {
+		display: flex;
+	}
+    .view {
+        flex-direction: column;
+		background-color: #fff;
+		margin-bottom: 20rpx;
+    }
+
+    .flex-row {
+        flex-direction: row;
+    }
+
+    .flex-col {
+        flex-direction: column;
+    }
+
+    .list-cell {
+        padding: 0 30rpx;
+    }
+
+    .uni-list-cell-hover {
+        background-color: #eeeeee;
+    }
+
+    .media-item {
+        position: relative;
+        flex: 1;
+        flex-direction: column;
+        padding: 35rpx 30rpx 15rpx 30rpx;
+    }
+
+	.media-info-box {
+        flex: 1;
+	}
+
+    .media-title {
+        flex: 1;
+        font-size: 30rpx;
+        color: #000000;
+    }
+
+    .media-title2 {
+        flex: 1;
+        lines: 2;
+        text-overflow: ellipsis;
+        margin-top: 6rpx;
+        line-height: 40rpx;
+    }
+
+    .media-title3 {
+        flex: 1;
+        lines: 3;
+        text-overflow: ellipsis;
+        margin-top: 6rpx;
+        line-height: 40rpx;
+    }
+
+	.media-con {
+        flex: 1;
+        font-size: 26rpx;
+        color: #555555;
+		margin-top: 16rpx;
+        line-height: 40rpx;
+        lines: 2;
+        text-overflow: ellipsis;
+    }
+
+    .media-con3 {
+        flex: 1;
+        lines: 3;
+        text-overflow: ellipsis;
+    }
+
+    .media-info {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .info-text {
+        margin-right: 20rpx;
+        color: #999999;
+        font-size: 24rpx;
+    }
+
+    .media-foot {
+        margin-top: 30rpx;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+	.head-img {
+		width: 64rpx;
+		height: 64rpx;
+		margin-right: 10rpx;
+		border-radius: 200rpx;
+	}
+
+	.nickname {
+		color: #999999;
+		font-size: 24rpx;
+	}
+	.img-row {
+		justify-content: space-between;
+		align-items: center;
+	}
+	.img {
+		width: 225rpx;
+		height: 142rpx;
+	}
+	.views {
+		align-items: center;
+	}
+
+	.views-num {
+		margin-left: 10rpx;
+		color: #a3a3a3;
+		font-size: 24rpx;
+	}
+	.imgIco {
+		height: 24rpx;
+		width: 26rpx;
+		margin-right: 10rpx;
+	}
+</style>

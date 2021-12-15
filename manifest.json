@@ -1,0 +1,222 @@
+{
+    "name" : "源点信用",
+    "appid" : "__UNI__EA8088D",
+    "description" : "",
+    "versionName" : "1.2.6",
+    "versionCode" : 126,
+    "transformPx" : false,
+    "uniStatistics" : {
+        "enable" : true
+    },
+    /* 5+App特有相关 */
+    "app-plus" : {
+        "compatible" : {
+            "ignoreVersion" : "true",
+            "runtimeVersion" : "2.6.11",
+            "compilerVersion" : "2.6.11"
+        },
+        "runmode" : "liberate", //修改uni.showToast自定义图片安卓打包之后无法展示的问题
+
+        // "renderer":"native", //App端纯原生渲染模式
+        "usingComponents" : true,
+        "nvueCompiler" : "uni-app",
+        "compilerVersion" : 3,
+        "splashscreen" : {
+            "alwaysShowBeforeRender" : false,
+            "waiting" : false,
+            "autoclose" : false,
+            "delay" : 0
+        },
+        /* 模块配置 */
+        "modules" : {
+            "Push" : {},
+            "Share" : {},
+            "OAuth" : {},
+            "Statistic" : {},
+            "VideoPlayer" : {}
+        },
+        /* 应用发布信息 */
+        "distribute" : {
+            /* android打包配置 */
+            "android" : {
+                "schemes" : [ "citgcyuandianapp" ],
+                "targetSdkVersion" : 27,
+                "permissions" : [
+                    "<uses-feature android:name=\"android.hardware.camera\"/>",
+                    "<uses-feature android:name=\"android.hardware.camera.autofocus\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.CALL_PHONE\"/>",
+                    "<uses-permission android:name=\"android.permission.CAMERA\"/>",
+                    "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.CHANGE_WIFI_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.FLASHLIGHT\"/>",
+                    "<uses-permission android:name=\"android.permission.GET_ACCOUNTS\"/>",
+                    "<uses-permission android:name=\"android.permission.INTERNET\"/>",
+                    "<uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\"/>",
+                    "<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_CONTACTS\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_LOGS\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_PHONE_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/>",
+                    "<uses-permission android:name=\"android.permission.RECORD_AUDIO\"/>",
+                    "<uses-permission android:name=\"android.permission.VIBRATE\"/>",
+                    "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_CONTACTS\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>",
+                    "<uses-permission android:name=\"android.permission.RECEIVE_USER_PRESENT\"/>"
+                ]
+            },
+            /* ios打包配置 */
+            "ios" : {
+                "urltypes" : [
+                    {
+                        "urlidentifier" : "com.yd.www",
+                        "urlschemes" : [ "citgcyuandianapp" ]
+                    }
+                ],
+                "capabilities" : {
+                    "plists" : {},
+                    "entitlements" : {
+                        "com.apple.developer.associated-domains" : [ "applinks:apple.yuandiancredit.com" ]
+                    }
+                },
+                "privacyDescription" : {
+                    "NSPhotoLibraryUsageDescription" : "用户登录后需要从相册中选择图片作为头像",
+                    "NSPhotoLibraryAddUsageDescription" : "用户登录后邀请好友时长按页面需要保存邀请页面便于分享",
+                    "NSCameraUsageDescription" : "用户登录后有可能需要访问摄像头拍照上传头像或者发表想法",
+                    "NSLocationWhenInUseUsageDescription" : "需要您同意才能获得您的地理位置，允许吗?",
+                    "NSLocationAlwaysUsageDescription" : "需要您同意才能获得您的地理位置，允许吗?",
+                    "NSLocationAlwaysAndWhenInUseUsageDescription" : "需要一直获取您的地理位置信息，允许吗?"
+                }
+            },
+            // 合并到工程Info.plist文件的数据（json格式）
+            /* SDK配置 */
+            "sdkConfigs" : {
+                "ad" : {},
+                "oauth" : {
+                    "qq" : {
+                        "appid" : "101558211"
+                    },
+                    "sina" : {
+                        "appkey" : "2039610792",
+                        "appsecret" : "7a1dd39e9577165ab875355bb1ed014b",
+                        "redirect_uri" : "http://www.udatech.com"
+                    },
+                    "weixin" : {
+                        "appid" : "wxfbc5ffac6820e65b",
+                        "appsecret" : "554acf02185492bbf8f6a077565696e0",
+                        "UniversalLinks" : "https://apple.yuandiancredit.com/"
+                    },
+                    "apple" : {}
+                },
+                "push" : {
+                    "unipush" : {}
+                },
+                "share" : {
+                    "sina" : {
+                        "appkey" : "2039610792",
+                        "appsecret" : "7a1dd39e9577165ab875355bb1ed014b",
+                        "redirect_uri" : "http://www.udatech.com"
+                    },
+                    "qq" : {
+                        "appid" : "101558211"
+                    },
+                    "weixin" : {
+                        "appid" : "wxfbc5ffac6820e65b",
+                        "UniversalLinks" : "https://apple.yuandiancredit.com/"
+                    }
+                },
+                "statics" : {
+                    "umeng" : {
+                        "appkey_ios" : "5e817bd4570df3eaf40004c6",
+                        "channelid_ios" : "umeng.yd.statics.ios",
+                        "appkey_android" : "5d10815a570df36a8e000606",
+                        "channelid_android" : "umeng.yd.statics.andriod"
+                    }
+                }
+            },
+            "splashscreen" : {
+                "android" : {
+                    "xhdpi" : "static/img/res/png/welcome720x1240.9.png",
+                    "hdpi" : "static/img/res/png/welcome480x762.9.png",
+                    "xxhdpi" : "static/img/res/png/welcome1080x1882.9.png"
+                },
+                "ios" : {
+                    "iphone" : {
+                        "retina55" : "static/img/res/png/welcome1242x2208.png",
+                        "retina47" : "static/img/res/png/welcome750x1334.png",
+                        "retina40" : "static/img/res/png/welcome640x1136.png",
+                        "retina35" : "static/img/res/png/welcome640x960.png",
+                        "portrait-896h@2x" : "static/img/res/png/welcome828x1792.png",
+                        "iphonex" : "static/img/res/png/welcome1125x2436.png",
+                        "portrait-896h@3x" : "static/img/res/png/welcome1242x2688.png"
+                    },
+                    "storyboard" : "static/ios/IOSLaunchScreen.zip"
+                },
+                "iosStyle" : "storyboard"
+            },
+            "icons" : {
+                "ios" : {
+                    "iphone" : {
+                        "app@2x" : "static/img/res/icons/120x120.png",
+                        "app@3x" : "static/img/res/icons/180x180.png",
+                        "notification@2x" : "static/img/res/icons/40x40.png",
+                        "notification@3x" : "static/img/res/icons/60x60.png",
+                        "settings@2x" : "static/img/res/icons/58x58.png",
+                        "settings@3x" : "static/img/res/icons/87x87.png",
+                        "spotlight@2x" : "static/img/res/icons/80x80.png",
+                        "spotlight@3x" : "static/img/res/icons/120x120.png"
+                    },
+                    "appstore" : "static/img/res/icons/1024x1024.png",
+                    "ipad" : {
+                        "app" : "static/img/res/icons/76x76.png",
+                        "app@2x" : "static/img/res/icons/152x152.png",
+                        "notification" : "static/img/res/icons/20x20.png",
+                        "notification@2x" : "static/img/res/icons/40x40.png",
+                        "proapp@2x" : "static/img/res/icons/167x167.png",
+                        "settings" : "static/img/res/icons/29x29.png",
+                        "settings@2x" : "static/img/res/icons/58x58.png",
+                        "spotlight" : "static/img/res/icons/40x40.png",
+                        "spotlight@2x" : "static/img/res/icons/80x80.png"
+                    }
+                },
+                "android" : {
+                    "hdpi" : "static/img/res/icons/72x72.png",
+                    "xhdpi" : "static/img/res/icons/96x96.png",
+                    "xxhdpi" : "static/img/res/icons/144x144.png",
+                    "xxxhdpi" : "static/img/res/icons/192x192.png"
+                }
+            },
+            "safearea" : {
+                //安全区域配置，仅iOS平台生效  
+                "bottom" : {
+                    // 底部安全区域配置  
+                    "offset" : "auto" // 底部安全区域偏移，"none"表示不空出安全区域，"auto"自动计算空出安全区域，默认值为"none"  
+                }
+            }
+        }
+    },
+    /* 快应用特有相关 */
+    "quickapp" : {},
+    /* 小程序特有相关 */
+    "mp-weixin" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false
+        },
+        "usingComponents" : true
+    },
+    "mp-alipay" : {
+        "usingComponents" : true
+    },
+    "mp-baidu" : {
+        "usingComponents" : true
+    },
+    "mp-toutiao" : {
+        "usingComponents" : true
+    }
+}

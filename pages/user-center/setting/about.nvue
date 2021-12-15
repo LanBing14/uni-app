@@ -1,0 +1,151 @@
+<template>
+	<view class="content">
+		<image class="about-logo-img" src="/static/img/ucenter/setting/logo.png" alt=""/>
+		<text class="version-no">V{{version}}</text>
+		<!-- 列表 -->
+		<view class="center-list">
+			<navigator>
+				<view class="center-list-item" @click="checkApp">
+					<text class="list-text">检测更新</text>
+					<view class="navigat-arrow"><uni-icons type="arrowright" color="#bdbdbd"></uni-icons></view>
+				</view>
+			</navigator>
+			<navigator open-type="navigate">
+				<view class="center-list-item">
+					<text class="list-text">微信公众号</text>
+					<text class="list-right-text">源点credit</text>
+				</view>
+			</navigator>
+			<navigator url="./setting/service" open-type="navigate">
+				<view class="center-list-item">
+					<text class="list-text">官方网站</text>
+					<text class="list-right-text">www.yuandiancredit.com</text>
+				</view>
+			</navigator>
+			<navigator open-type="navigate">
+				<view class="center-list-item">
+					<text class="list-text">技术支持</text>
+					<text class="list-right-text">未至科技</text>
+				</view>
+			</navigator>
+		</view>
+		
+		<view style="position: fixed; bottom: 20rpx; width: 750rpx;">
+			<text class="bottom-text">苏ICP备：15011632号-3&emsp;公安备32050502000818</text>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {Api_getAppVersion} from '@/api/share.js'
+	export default {
+		data() {
+			return {
+				title: 'about',
+				version: '1.0.0'
+			}
+		},
+        mounted(){
+            var that = this;
+            plus.runtime.getProperty(plus.runtime.appid, function(inf) {
+                that.version = inf.version;
+            })
+        },
+		methods: {
+			checkApp() {
+				var that = this;
+				Api_getAppVersion().then(res => {
+					// console.log(res);
+					if (res.statusCode === 1) {
+						if (that.version < res.data.appVersion) {
+							uni.showModal({ //提醒用户更新
+								title: "更新提示",
+								content: '系统已升级至' + res.data.appVersion + '版本，是否更新？',
+								success: (re) => {
+									if (re.confirm) {
+										const platform = uni.getSystemInfoSync().platform;
+										if (platform == 'android') {
+											var dtask = plus.downloader.createDownload(res.data.androidUrl, {}, function (d, status) {
+												// 下载完成  
+												if ( status == 200 ) {
+													plus.runtime.install(plus.io.convertLocalFileSystemURL(d.filename), {}, {}, function (error) {
+														uni.showToast({
+															title: '安装失败',
+															icon: 'none',
+															duration: 2000
+														});
+													});
+												} else {
+													uni.showToast({
+														title: '下载失败',
+														icon: 'none',
+														duration: 2000
+													});
+												}
+											});
+											dtask.start();
+										} else if (platform == 'ios') {
+											console.log(res.data.iosUrl);
+											plus.runtime.openURL(res.data.iosUrl);
+										}
+									}
+								}
+							});
+						} else {
+							uni.showToast({
+								title: '已是最新版本！',
+								icon: 'none',
+								duration: 2000
+							});
+						}
+					} else {
+						console.log(res.message);
+					}
+				});
+			}
+		}
+	}
+</script>
+
+<style scoped>
+	@import '../../../common/css/uCenter/uCenter.css';
+
+	.about-logo {
+		margin-top: 60rpx;
+		text-align: center;
+	}
+
+	.about-logo-img {
+		margin-top: 60rpx;
+		margin-left: 300rpx;
+		margin-bottom: 40rpx;
+		width: 150rpx;
+		height: 150rpx;
+	}
+
+	.version-no {
+		text-align: center;
+		font-weight: bold;
+		font-size: 32rpx;
+		color: #000000;
+	}
+
+	.list-text {
+		font-size: 30rpx;
+		color: #000000;
+	}
+
+	.list-right-text {
+		height: 90rpx;
+		line-height: 90rpx;
+		font-size: 28rpx;
+		color: #999999;
+		text-align: right;
+	}
+	
+	.bottom-text {
+		font-size: 28rpx;
+		color: #999999;
+		text-align: center;
+	}
+</style>

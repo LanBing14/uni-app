@@ -1,0 +1,133 @@
+<template>
+	<view class="faq-item">
+		<view class="media-item view" @click="itemClick(value.id)">
+			<view class="media-info-box flex-col">
+				<rich-text class="media-title" :nodes="html2text(value.issueTitle)"></rich-text>
+				<!-- <view class="flex-row" style="align-items: center;" v-if="value.answerContent">
+					<image :src="value.headPicUrl ? value.headPicUrl : imgUrl" mode="aspectFill" class="head-img"></image>
+					<text class="nickname">{{ value.username }}</text>
+				</view> -->
+				<!-- <text class="panel-content" v-if="value.answerContent">{{value.answerContent}}</text> -->
+				<rich-text v-if="value.answerContent" class="media-con" :nodes="html2text(value.answerContent)"></rich-text>
+				<text v-else class="panel-content no-content">尚未有人回答</text>
+				<view class="media-foot flex-row">
+					<view class="media-info flex-row">
+						<text class="info-text">{{ value.likeCount || 0 }} 赞同 ·</text>
+						<text class="info-text">{{ value.commentCount || 0 }} 评论</text>
+					</view>
+				</view>
+			</view>
+		</view>
+		<view class="space-line"></view>
+	</view>
+</template>
+
+<script>
+	import { parseHtml } from '@/common/js/html-parser.js'
+export default {
+	props: {
+		value: {
+			type: Object,
+			default: function(e) {
+				return {};
+			}
+		}
+	},
+	data() {
+		return {
+			imgUrl: '/static/img/demo1.png'
+		};
+	},
+	methods: {
+		html2text(html){
+			return parseHtml(html);
+		},
+        itemClick(id) {
+			if (this.value.category == 5) {
+			    // 回答详情
+			    uni.navigateTo({url: '/pages/faq/faq/answer-detail?id=' + id});
+			} else {
+			    // 问题详情
+			    uni.navigateTo({url: '/pages/faq/faq/detail?id=' + id});
+			}
+        }
+	}
+};
+</script>
+
+<style scoped>
+.faq-item {
+	display: flex;
+	flex-direction: column;
+	background-color: #ffffff;
+}
+.flex-row {
+	flex-direction: row;
+}
+.flex-col {
+	flex-direction: column;
+}
+.space-line {
+	background-color: #f7f7f7;
+	height: 20rpx;
+	width: 750rpx;
+}
+.media-item {
+	position: relative;
+	flex: 1;
+	flex-direction: column;
+	padding: 35rpx 30rpx 15rpx 30rpx;
+}
+.media-info-box {
+	flex: 1;
+}
+.media-title {
+	lines: 2;
+	font-size: 35rpx;
+	color: #000000;
+}
+.media-con {
+	flex: 1;
+	font-size: 28rpx;
+	color: #555555;
+	margin-top: 16rpx;
+	lines: 2;
+	text-overflow: ellipsis;
+}
+.media-info {
+	flex-direction: row;
+	align-items: center;
+}
+.info-text {
+	margin-right: 20rpx;
+	color: #999999;
+	font-size: 24rpx;
+}
+.media-foot {
+	margin-top: 30rpx;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+}
+.head-img {
+	width: 36rpx;
+	height: 36rpx;
+	margin-right: 10rpx;
+	border-radius: 200rpx;
+}
+.nickname {
+	color: #999999;
+	font-size: 24rpx;
+}+
+.panel-content {
+	width: 710rpx;
+	font-size: 24rpx;
+	color: #555555;
+	lines: 3;
+	text-overflow: ellipsis;
+}
+.no-content{
+	margin-top: 10rpx;
+	color: #dddddd;
+}
+</style>

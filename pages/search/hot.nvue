@@ -1,0 +1,105 @@
+<template>
+	<view class="search-box">
+		<view class="search-tip">
+			<text class="tt">热门搜索</text>
+		</view>
+		<view class="search-tags">
+			<view class="search-tag" v-for="(item, index) in hotlist" :key="index" @click="itemClick(item)">
+				<text class="tag-text">{{ item.keyword }}</text>
+				<image src="/static/img/search/fire.png" class="fire" mode="aspectFill" v-if="index < 3"></image>
+			</view>
+		</view>
+
+		<view class="search-tip search-tip2" v-if="historyList.length > 0">
+			<text class="tt">历史搜索</text>
+		</view>
+		<view class="search-tags">
+			<view class="search-tag" v-for="(item, index) in historyList" :key="index" @click="itemClick(item)">
+				<text class="tag-text">{{ item.keyword }}</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+			};
+		},
+		props: {
+			hotlist: {
+				type: Array,
+				default: function(e) {
+					return [];
+				}
+			},
+            historyList: {
+                type: Array,
+                default: function(e) {
+                    return [];
+                }
+            }
+		},
+		methods: {
+			backClick() {
+				uni.navigateBack({
+					delta: 1
+				});
+			},
+			itemClick(item){
+				this.$emit('click', item);
+			}
+		}
+	};
+</script>
+<style scoped>
+.search-box {
+	padding: 40rpx 35rpx;
+	flex: 1;
+}
+.search-tip{
+	margin-bottom: 20rpx;
+}
+
+.search-tip2 {
+	margin-top: 30rpx;
+}
+
+.tt {
+	font-size: 30rpx;
+	color: #010101;
+}
+.search-tags {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	flex-wrap: wrap;
+	box-sizing: border-box;
+	margin: 0 -30rpx;
+}
+.search-tag {
+	display: flex;
+	align-items: center;
+	flex-direction: row;
+	justify-content: flex-start;
+	background-color: #f6f6f6;
+	border-radius: 30rpx;
+	text-align: center;
+	height: 54rpx;
+	padding: 0 24rpx;
+	margin: 10rpx 30rpx;
+}
+.tag-text{
+	font-size: 24rpx;
+	color: #484848;
+}
+.search-tag:active {
+	background-color: #ededed;
+}
+.fire {
+	width: 16rpx;
+	height: 24rpx;
+	margin-left: 12rpx;
+}
+</style>

@@ -1,0 +1,93 @@
+<template>
+	<view class="">
+		<view class="news-item view" @click="itemClick(value.id)">
+			<view class="news-info-box">
+				<rich-text class="news-title" :nodes="html2text(value.title)"></rich-text>
+				<rich-text class="news-desc" :nodes="html2text(value.content)"></rich-text>
+				<view class="news-foot flex-row">
+					<view class="news-info flex-row">
+						<text class="info-text">{{ value.publishDate | dateFormat('yyyy-MM-dd')}}</text>
+					</view>
+				</view>
+			</view>
+		</view>
+		<view class="space-line"></view>
+	</view>
+</template>
+
+<script>
+	import {dateFormat} from '@/utils/index.js'
+	import { parseHtml } from '@/common/js/html-parser.js'
+	export default {
+		filters:{
+			dateFormat
+		},
+		data() {
+			return {
+			};
+		},
+		props: {
+			value: {
+				type: Object,
+				default: function(){
+					return {}
+				}
+			}
+		},
+		methods: {
+			newImgUrl(url){
+				return url?url:'/static/img/demo2.png';
+			},
+			html2text(html){
+				return parseHtml(html);
+			},
+            itemClick(id) {
+                uni.navigateTo({url: '/pages/details/details?id=' + id});
+            }
+		}
+	};
+</script>
+
+<style scoped>
+.news-item {
+	position: relative;
+	display: flex;
+	flex: 1;
+	padding: 20rpx 24rpx 25rpx 20rpx;
+}
+.news-info-box {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+.news-title {
+	font-size: 35rpx;
+	color: #000000;
+	lines: 1;
+	text-overflow: ellipsis;
+	margin-bottom: 20rpx;
+}
+.news-desc {
+	flex: 1;
+	lines: 2;
+	font-size: 28rpx;
+	color: #999999;
+	margin-bottom: 8rpx;
+	text-overflow: ellipsis;
+}
+.news-info {
+	flex-direction: row;
+	align-items: center;
+}
+.info-text {
+	margin-right: 20rpx;
+	color: #999999;
+	font-size: 24rpx;
+}
+.space-line {
+	background-color: #f7f7f7;
+	height: 20rpx;
+	width: 750rpx;
+}
+</style>

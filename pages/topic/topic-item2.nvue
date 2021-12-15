@@ -1,0 +1,132 @@
+<template>
+	<view>
+		<view class="list flex-col" @click="goDetail(tabIndex, listItem.id)">
+				<view class="flex-row">
+					<view class="flex-col">
+						<view class="flex-row">
+							<text class="list-title" :class="{'read-status': listItem.readStatus}" v-if="listItem.title">{{listItem.title}}</text>
+						</view>
+						<text class="list-desc" :class="{'read-status': listItem.readStatus}" v-if="listItem.content">{{listItem.content}}</text>
+						<view class="media-info flex-row">
+							<text class="info-text" v-if="listItem.publishDate">{{listItem.publishDate | friendlyDate}}</text>
+							<text class="info-text" v-if="listItem.publishDate">·</text>
+							
+							<text class="info-text">{{listItem.browseCount}}浏览</text>
+						</view>
+					</view>			
+				</view>		
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		friendlyDate
+	} from '@/common/js/util.js';
+	
+	export default {
+		props: {
+		    listItem: {
+		        type: Object,
+		        default: function(e) {
+		            return {}
+		        }
+		    },
+			tabIndex: {
+				type: [Number, String],
+				default: 1
+			}
+		},
+		filters: {
+			friendlyDate
+		},
+		methods: {
+			goDetail(tabIndex, id) {
+                this.listItem.readStatus = true;
+                this.browseCountAdd();
+				if(tabIndex === 1 || tabIndex === 2){
+					uni.navigateTo({
+						url: '/pages/details/details?id=' + id
+					});
+				} else {
+					uni.navigateTo({
+						url: '/pages/details/baike-detail?id=' + id
+					});
+				}
+				
+			},
+            browseCountAdd() {
+                this.listItem.browseCount++;
+            },
+		    click() {
+		        this.$emit('click');
+		    },
+		    close(e) {
+		        e.stopPropagation();
+		        this.$emit('close');
+		    }
+		}
+	}
+</script>
+
+<style scoped>
+.view {
+	flex-direction: column;
+}
+.flex-col {
+	flex-direction: column;
+}
+.flex-row {
+	flex-direction: row;
+}
+.info-text {
+	margin-right: 22rpx;
+	color: #a3a3a3;
+	font-size: 23rpx;
+}
+.list {
+	background-color: #ffffff;
+	margin-bottom: 17rpx;
+	padding: 35rpx 20rpx;
+	background-color: #fff;
+	border-bottom-width: 20rpx;
+	border-bottom-color: #f7f7f7;;
+	border-bottom-style: solid;
+}
+.list-title {
+	width: 710rpx;
+	font-size: 32rpx;
+	line-height: 44rpx;
+	color: #000;
+	lines: 1;
+	text-overflow: ellipsis;
+}
+.list-desc {
+	width: 710rpx;
+	font-size: 26rpx;
+	line-height: 38rpx;
+	color: #787878;
+	lines: 3;
+	text-overflow: ellipsis;
+	margin-top: 20rpx;
+}
+.explain {
+	margin-right: 13rpx;
+	background-color: #ce0201;
+	color: #FFFFFF;
+	font-size: 20rpx;
+	height: 30rpx;
+	width: 60rpx;
+	line-height: 30rpx;
+	text-align: center;
+	padding: 0 10rpx;
+}
+.media-info {
+	flex-direction: row;
+	align-items: center;
+	margin-top: 16rpx;
+}
+.read-status {
+	color: #999999;
+}
+</style>

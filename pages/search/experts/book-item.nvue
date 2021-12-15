@@ -1,0 +1,190 @@
+<template>
+	<view>
+		<view class="list flex-col">
+			<view class="flex-row" @click="goDetail(1, value.id)">
+				<!-- 书籍 -->
+				<view class="books">
+					<image :src="value.opusUrl? value.opusUrl : '/static/img/demo2.png'" mode="aspectFill" class="books-img" />
+				</view>
+				<view class="flex-col" style="flex:1">
+					<!-- <view class="flex-row" style="align-items: center;flex:1"> -->
+						<rich-text class="list-title" :nodes="html2text(value.opusTitle)"></rich-text>
+						<!-- <text class="tt-tag" v-if="value.type == '1'">书籍</text> -->
+						<!-- <text class="tt-tag" v-if="value.type == '2'">回答</text> -->
+						<!-- <text class="tt-tag" v-if="value.type == '0'">文章</text> -->
+					<!-- </view> -->
+					<rich-text class="list-desc" :nodes="html2text(value.opusIntro)"></rich-text>
+				</view>
+			</view>
+			<!-- <view class="media-info flex-row" @click="goDetail(value.type, value.id)">
+				<text class="info-text" v-if="value.publishDate">{{value.publishDate | friendlyDate}}</text>
+				<text class="info-text">·</text>
+				<text class="info-text">{{value.browseCount + addView}}浏览</text>
+				<text class="info-text" v-if="value.type == '2'">·</text>
+				<text class="info-text" v-if="value.type == '2'">{{value.likeCount}}人赞同</text>
+			</view> -->
+		</view>
+	</view>
+</template>
+
+<script>
+	import userFocus from '@/components/user-focus.nvue'
+	import { parseHtml } from '@/common/js/html-parser.js'
+	import {
+		friendlyDate
+	} from '@/common/js/util.js';
+
+	export default {
+		components: {
+			userFocus
+		},
+		props: {
+			value: {
+				type: Object,
+				default: function(e) {
+					return {}
+				}
+			},
+			active: {
+				type: Number,
+				default: 0
+			},
+			tabIndex: {
+				type: [Number, String],
+				default: 0
+			}
+		},
+		data() {
+			return {
+				addView: 0
+			}
+		},
+		onLoad() {
+			console.info(this.value);
+		},
+		onShow() {
+
+		},
+		filters: {
+			friendlyDate
+		},
+		methods: {
+			html2text(html){
+				return parseHtml(html);
+			},
+			goDetail(type, id) {
+				this.browseCountAdd();
+
+				if (type === 0) {
+					uni.navigateTo({
+						url: '/pages/details/details?id=' + id
+					});
+				} else if ((type === 2)) {
+					uni.navigateTo({
+						url: '/pages/faq/faq/detail?id=' + id
+					});
+				} else if ((type === 1)) {
+					uni.navigateTo({
+						url: '/pages/details/book-detail?id=' + id
+					});
+				} else {
+					uni.navigateTo({
+						url: '/pages/404.vue'
+					});
+				}
+
+			},
+			click() {
+				this.$emit('click');
+			},
+			close(e) {
+				e.stopPropagation();
+				this.$emit('close');
+			},
+			browseCountAdd() {
+				this.addView += 1;
+			}
+		}
+	}
+</script>
+
+<style scoped>
+	view {
+		display: flex;
+	}
+	.view {
+		flex-direction: column;
+	}
+
+	.flex-col {
+		flex-direction: column;
+	}
+
+	.flex-row {
+		flex-direction: row;
+	}
+	.info-text {
+		margin-right: 20rpx;
+		color: #999999;
+		font-size: 24rpx;
+	}
+	.list {
+		background-color: #ffffff;
+		margin-bottom: 17rpx;
+		padding: 35rpx 20rpx;
+		background-color: #fff;
+		border-bottom-width: 20rpx;
+		border-bottom-color: #f7f7f7;;
+		border-bottom-style: solid;
+	}
+	.list-title {
+		lines: 1;
+		font-size: 35rpx;
+		color: #000000;
+		text-overflow: ellipsis;
+		margin-bottom: 20rpx;
+		text-overflow: ellipsis;
+	}
+	.list-desc {
+		flex: 1;
+		font-size: 28rpx;
+		color: #555555;
+		lines: 3;
+		text-overflow: ellipsis;
+	}
+	.books-img {
+		width: 175rpx;
+		height: 230rpx;
+		margin-right: 28rpx;
+	}
+	.tt-tag {
+		margin-left: 10rpx;
+		padding: 0 10rpx;
+		height: 40rpx;
+		border-radius: 10rpx;
+		color: #b1b1b1;
+		font-size: 20rpx;
+		text-align: center;
+		border-width: 1rpx;
+		border-color: solid;
+		border-color: #b1b1b1;
+		lines: 1;
+		text-overflow: ellipsis;
+		overflow: hidden;
+	}
+	.explain {
+		margin-right: 13rpx;
+		background-color: #ce0201;
+		color: #FFFFFF;
+		font-size: 20rpx;
+		height: 30rpx;
+		width: 60rpx;
+		text-align: center;
+		padding: 0 10rpx;
+	}
+	.media-info {
+		flex-direction: row;
+		align-items: center;
+		margin-top: 16rpx;
+	}
+</style>

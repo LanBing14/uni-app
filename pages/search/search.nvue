@@ -1,0 +1,301 @@
+<template>
+	<view class="search">
+		<!-- #ifdef APP-PLUS -->
+		<view class="status_bar"><view class="top_view"></view></view>
+		<!-- #endif -->
+
+		<uni-nav-bar class="search-bar" :leftShow="false" :rightShow="false" background-color="#d51e1e" statusBar="true">
+			<view class="input-view">
+				<view class="input-left" @click="backClick">
+					<uni-icons color="#fff" type="arrowleft" size="24" />
+				</view>
+				<view class="search-content">
+					<view class="search-tag" v-if="showTag">
+						<view class="">
+							<text class="tag-text">Ta的专栏</text>
+						</view>
+						<uni-icons @click="delClick" type="closeempty" size="20" color="#D21513"></uni-icons>
+					</view>
+					<view class="search-swiper">
+						<view class="search-icon">
+							<uni-icons class="input-uni-icon" type="search" size="18" color="#b7b9bc" />
+						</view>
+						<view class="search-placeholder" v-if="showPlaHot&&!showTag">
+							<hot-placeholder class="input-hot" @click="hotPlaceClick" :hotlist="hotSearch"></hot-placeholder>
+						</view>
+						<view class="search-input" v-if="!showPlaHot||showTag">
+							<input confirm-type="search" :focus="inputFocus" v-model="searchContent" class="nav-bar-input" maxlength="20" type="text" :placeholder="inputPlaceholder" @confirm="confirmClick" />
+						</view>
+					</view>
+				</view>
+			</view>
+		</uni-nav-bar>
+		
+		<view class="search-index-content" v-if="!showTab">
+			<!-- 热词 -->
+			<hot @click="hotClick" :hotlist="hotSearch" :historyList="historyList"></hot>
+		</view>
+		<!-- 搜索 -->
+		<view class="search-index-content" v-if="showTab&&!showTag">
+			<search-content ref="searchcontent" class="search-tab" :keyword="searchContent"></search-content>
+		</view>
+		<!-- 专家搜索 -->
+		<view class="search-index-content" v-if="showTab&&showTag">
+			<experts-list ref="exptab" :expid="expertsid" :keyword="searchContent"></experts-list>
+		</view>
+		 
+	</view>
+</template>
+
+<script>
+	import uniNavBar from '@/components/uni-nav-bar/uni-nav-bar.vue';
+	import Hot from './hot.nvue';
+	import HotPlaceholder from './hot-placeholder.nvue';
+	import SearchContent from './search-content.nvue';
+	import {Api_GetHotsearchList, Api_AddKeyword, Api_GetHistorySearchList} from '@/api/search.js';
+	import ExpertsList from './experts-list.nvue'
+	
+	export default {
+		components: {
+			uniNavBar,
+			SearchContent,
+			Hot,HotPlaceholder,
+			ExpertsList
+		},
+		data() {
+			return {
+				searchContent: '',
+				inputPlaceholder:'请输入关键词',
+				inputFocus:false,
+				hotSearch: [],
+                historyList: [],
+                requestParams: { // 参数信息
+                    currentPage: 1,
+                    pageSize: 5
+                },
+				showPlaHot:true,
+				showTab:false,
+				showTag:false,
+				expertsid:'',//7bc20b5a-ed08-4945-8da9-8a1c96cab9e1
+			};
+		},
+		onLoad(option){
+			Api_GetHotsearchList().then(res=>{
+				if(res.statusCode === 1){
+					if(res.data.length > 0){
+						this.hotSearch = res.data;
+						if(option.id){
+							this.showTab = true;
+							this.showTag = true;
+							this.expertsid = option.id;
+						}
+					}else{
+						this.showPlaHot = false;
+					}
+				}
+			});
+
+            Api_GetHistorySearchList(this.requestParams).then(res=>{
+                if(res.statusCode === 1){
+                    if(res.data.length > 0){
+                        this.historyList = res.data;
+                    }
+                }
+            })
+		},
+		methods: {
+			backClick() {
+				uni.navigateBack({
+					delta: 1
+				});
+			},
+			hotPlaceClick(val){
+				this.inputPlaceholder = val.keyword;
+				this.searchContent = val.keyword;
+				this.showPlaHot = false;
+				this.inputFocus = true;
+			},
+			hotClick(val){
+				this.searchContent = val.keyword;
+				this.showPlaHot = false;
+				this.showTab = true;
+			},
+			confirmClick(e){
+				let kw = e.detail.value;
+				if (!kw && this.inputPlaceholder === '请输入关键词') {
+                    uni.showToast({
+                        icon: "none",
+                        title: this.inputPlaceholder,
+                        mask: false,
+                        duration: 1500
+                    });
+                    return;
+				}
+
+				this.searchContent = kw?kw:this.inputPlaceholder;
+				this.showTab = true;
+                // 加入搜索关键词
+                Api_AddKeyword({keyword: this.searchContent}).then(res=>{
+
+                })
+				if(this.expertsid){
+					this.$refs.exptab.searchRefish();
+				}else{
+					this.$refs.searchcontent.searchRefish();
+				}
+
+			},
+			delClick(){
+				this.showTab = true;
+				this.showTag = false;
+				this.expertsid = '';
+				
+				this.$refs.searchcontent.searchRefish();
+			}
+		}
+	};
+</script>
+
+<style scoped>
+.search {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	background-color: #ffffff;
+}
+.search-index-content{
+	flex: 1;
+} 
+.input-view {
+	/* #ifndef APP-NVUE */
+	display: flex;
+	/* #endif */
+	flex: 1;
+	flex-direction: row;
+	align-items: center;
+}
+.input-left{
+	width: 60rpx;
+	align-items: center;
+}
+.input-center{
+	flex:1;
+	flex-direction: row;
+	background-color: #fff;
+	border-radius: 14rpx;
+}
+.search-content{
+	flex: 1;
+	background-color: #ffffff;
+	border-radius: 14rpx;
+	margin: 0 14rpx;
+	padding: 10rpx 0;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+}
+.search-swiper{
+	flex: 1;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+}
+.search-icon{
+	padding:0 16rpx;
+}
+.search-placeholder{
+	flex: 1;
+}
+.search-input{
+	flex: 1;
+}
+.input-hot{
+	flex: 1;
+	margin-left: 18rpx;
+}
+.nav-bar-input {
+	flex: 1;
+	height: 50rpx;
+	font-size: 14px;
+	padding-left: 18rpx;
+	color: #b7b9bc;
+}
+
+.search-tag-panel {
+	/* #ifndef APP-NVUE */
+	display: flex;
+	/* #endif */
+	flex-direction: row;
+	position: relative;
+	padding: 16rpx;
+}
+.searchbar-box {
+	/* #ifndef APP-NVUE */
+	display: flex;
+	box-sizing: border-box;
+	/* #endif */
+	overflow: hidden;
+	position: relative;
+	flex: 1;
+	justify-content: center;
+	flex-direction: row;
+	align-items: center;
+	height: 72rpx;
+	padding: 5px 8px 5px 0px;
+	border-width: 0.5px;
+	border-style: solid;
+	border-color: #c8c7cc;
+	border-radius: 10rpx;
+}
+.search-tag{
+	/* #ifndef APP-NVUE */
+	display: flex;
+	/* #endif */
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	background-color: #ededed;
+	line-height: 1.4;
+	margin-left: 12rpx;
+	height: 48rpx;
+}
+.tag-text{
+	font-size: 26rpx;
+	color: #d21513;
+	padding-left: 15rpx;
+}
+.search-tag-icon-input {
+	flex: 1;
+	font-size: 28rpx;
+	color: #333333;
+}
+.experts-tab{
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	background-color: #ffffff;
+	height: calc(100% - 90rpx);
+}
+.tab-box{
+	flex: 1;
+}
+
+
+.hot-list{
+	flex: 1;
+	height: 50rpx;
+}
+.hot-item{
+	flex: 1;
+	height: 50rpx;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+}
+.hot-text{
+	color: #b7b9bc;
+	font-size: 28rpx;
+}
+</style>
+

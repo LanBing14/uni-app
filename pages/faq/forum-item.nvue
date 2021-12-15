@@ -1,0 +1,59 @@
+<template>
+	<view>
+		<!-- 0:资讯 1:专栏文章 2:信用百科 3:著作 4:提问 5:回答 6:专家 7:想法 -->
+		<!-- 资讯 -->
+		<news-item v-if="value.shareType === '0'" v-model="value"></news-item>
+		<!-- 专栏文章 -->
+		<articles-item v-if="value.shareType === '1'" v-model="value"></articles-item>
+		<!-- 信用百科 -->
+		<entry-item v-if="value.shareType === '2'" v-model="value"></entry-item>
+		<!-- 著作 -->
+
+		<!-- 提问 -->
+		<question-item v-if="value.shareType === '4'" v-model="value"></question-item>
+		<!-- 回答 -->
+		<answer-item v-if="value.shareType === '5'" v-model="value"></answer-item>
+		<!-- 专家 -->
+		<!-- <experts-item v-show="value.itemType === '6'" v-model="dataList[dindex]"></experts-item> -->
+		<!-- 想法 -->
+		<idea-item v-if="value.shareType === '7'" v-model="value.idea"></idea-item>
+	</view>
+</template>
+
+<script>
+import NewsItem from './forum/news-item.nvue';
+import ExpertsItem from './forum/experts-item.nvue';
+import ArticlesItem from './forum/articles-item.nvue';
+import QuestionItem from './forum/question-item.nvue';
+import AnswerItem from './forum/answer-item.nvue';
+import EntryItem from './forum/entry-item.nvue';
+import IdeaItem from './forum/idea-item.nvue';
+import {
+	Api_GetIdeaList
+} from '@/api/faq.js';
+export default {
+	components: {
+		NewsItem,
+		ExpertsItem,
+		ArticlesItem,
+		QuestionItem,
+		AnswerItem,
+		EntryItem,
+		IdeaItem,
+	},
+	props: {
+		value: {
+			type: Object,
+			default() {
+				return 0;
+			}
+		},
+	},
+	data() {
+		return {
+		};
+	},
+	methods: {
+	}
+};
+</script>

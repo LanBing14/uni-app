@@ -1,0 +1,325 @@
+<template>
+	<view>
+		<view class="comment-tool">
+			<view class="tool-input" @click="showContactPop">{{option.placeholder}}</view>
+
+			<view class="comment-panel" v-show="option.comment" @click="goComment">
+				<image class="tool-comment" src="/static/img/comment/comment.png" mode=""></image>
+				<text class="comment-tip" v-show="commentCount && commentCount > 0">{{ commentCount > 99 ? '99+' : commentCount  }}</text>
+			</view>
+			<!-- 点赞 -->
+			<view class="like-panel" v-show="option.share" @click="likeClick">
+				<image class="tool-like" :src="'/static/img/comment/praise' + (likeStatus === '0' ? '' : '1') + '.png'" mode=""></image>
+				<text class="comment-tip" v-show="likeCount && likeCount > 0">{{ likeCount > 99 ? '99+' : likeCount }}</text>
+			</view>
+			<!-- 收藏 -->
+			<view class="collection-panel" v-show="type === 2" @click="collectionClick">
+				<image class="tool-collection" :src="'/static/img/comment/collection' + (collectionStatus === '0' ? '' : '1') + '.png'"
+				 mode=""></image>
+				<text class="comment-tip" v-show="collectionCount">{{ collectionCount > 99 ? '99+' : collectionCount }}</text>
+			</view>
+			<view class="share-panel" v-show="option.share">
+				<image @click="shareClick" class="tool-share" src="/static/img/comment/share.png" mode=""></image>
+			</view>
+		</view>
+
+		<uni-share ref="uniShare" :info="shareInfo"></uni-share>
+
+		<uni-popup ref="popup" type="bottom" @change="clickMask">
+			<view class="pop-comment">
+				<textarea auto-height="true" class="pop-input" confirm-type="send" ref="inputComment" v-model.trim="model" @confirm="commentClick" :focus="getFocus"
+				 :hold-keyboard="holdKeyboard" :show-confirm-bar="showConfirmBar" cursor-spacing="0" :maxlength="option.maxlength"
+				 :placeholder="option.placeholder"/>
+
+				<view class="pop-send" @touchend="onTap" :class="{lightColor: model !== ''}" @click="commentClick">发送</view>
+			</view>
+		</uni-popup>
+	</view>
+</template>
+
+<script>
+	import {
+		mapGetters
+	} from 'vuex'
+
+	export default {
+		props: {
+			baseInfo: {
+				type: Object,
+				default: function() {
+					return {}
+				}
+			},
+			option: {
+				type: Object,
+				default: function(e) {
+					return {
+						placeholder: '有话要说,不吐不快',
+						comment: false,
+						like: false,
+						collection: false,
+						share: false,
+						maxlength: 120,
+						commentCount: 0,
+						collection: 0,
+					};
+				}
+			},
+			value: {
+				type: String,
+				default: '',
+			},
+			shareInfo: {
+				type: Object,
+				default: function(e) {
+					return {}
+				}
+			}
+		},
+		data() {
+			return {
+				commentValue: '',
+				type: 0,
+				keyboardHeight: 0,
+				getFocus: false,
+				showConfirmBar: false,
+				holdKeyboard: true
+			}
+		},
+		created() {
+			// type    0:评论/回复 1:回答 2:文章 3:想法
+			this.type = this.baseInfo ? this.baseInfo.type : '';
+		},
+		destroyed() {
+			uni.$off('setAtUser')
+		},
+		// 统一数据源
+		computed: {
+			model: {
+				get() {
+					return this.value;
+				},
+				set(newVal) {
+					this.$emit('input', newVal);
+				}
+			},
+			...mapGetters([
+				'likeCount',
+				'likeStatus',
+				'collectionCount',
+				'collectionStatus',
+				'commentCount'
+			])
+		},
+		watch: {
+			model: function(val) {
+				return this.$emit('input', val);
+			},
+			getFocus: function(val) {
+				return this.getFocus = val;
+			},
+			holdKeyboard: function(val) {
+				return this.holdKeyboard = val;
+			},
+		},
+		methods: {
+			// 点击除mask以外的地方，强制保留显示输入法
+			onTap(e){
+				e.stopPropagation();
+			},
+			// 点击mask隐藏键盘
+			clickMask(e){
+				if(!e.show){
+					this.getFocus = false;
+					this.holdKeyboard = false;
+					this.model = "";
+				}
+			},
+			hideContactPop() {
+				this.$refs.popup.close();
+				this.getFocus = false;
+				this.holdKeyboard = false;
+			},
+			// 点击显示发送评论的弹窗
+			showContactPop() {
+				this.$refs.popup.open();
+				this.holdKeyboard = true;
+				setTimeout(() => {
+					this.getFocus = true;
+				}, 500)
+			},
+			// 发布评论
+			goComment() {
+				this.$emit('goClick');
+			}, // 发布评论
+			commentClick() {
+				this.$emit('cclick');
+				if(this.model !== ""){
+					this.getFocus = false;
+					this.holdKeyboard = false;
+				}
+			},
+			// 点赞
+			likeClick() {
+				// this.$emit('lclick');
+				this.$store.dispatch('likeIt', this.baseInfo);
+			},
+			// 收藏
+			collectionClick() {
+				this.$store.dispatch('addCollection', this.baseInfo.id);
+			},
+			// 分享
+			shareClick() {
+				this.$refs.uniShare.share();
+			}
+		}
+	};
+</script>
+
+<style scoped>
+	.comment-tool {
+		background-color: #fff;
+		position: fixed;
+		bottom: 0;
+		z-index: 99;
+		left: 0;
+		width: 750rpx;
+		height: 98rpx;
+		display: flex;
+		align-items: center;
+		flex-direction: row;
+		box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.4);
+	}
+
+	.tool-input {
+		flex: 1;
+		font-size: 24rpx;
+		margin-left: 20rpx;
+		margin-right: 30rpx;
+		background-color: #f4f4f4;
+		border-radius: 50rpx;
+		padding-top: 10rpx;
+		padding-bottom: 10rpx;
+		padding-left: 55rpx;
+		padding-right: 30rpx;
+		height: 50rpx;
+		line-height: 50rpx;
+		background-image: url(/static/img/comment/write.png);
+		background-position: 20rpx;
+		background-repeat: no-repeat;
+		background-size: 24rpx 22rpx;
+		color: #999999;
+	}
+
+	.comment-panel {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+	}
+
+	.tool-comment {
+		width: 39rpx;
+		height: 37rpx;
+		margin-right: 34rpx;
+	}
+
+	.like-panel {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+	}
+
+	.tool-like {
+		width: 36rpx;
+		height: 37rpx;
+		margin-right: 34rpx;
+		background-blend-mode: lighten;
+	}
+
+	.collection-panel {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+	}
+
+	.tool-collection {
+		width: 40rpx;
+		height: 37rpx;
+		margin-right: 34rpx;
+	}
+
+	.share-panel {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+	}
+
+	.tool-share {
+		width: 34rpx;
+		height: 37rpx;
+		margin-right: 34rpx;
+	}
+
+	.comment-tip {
+		line-height: 1.2;
+		position: absolute;
+		top: -20rpx;
+		right: 8rpx;
+		font-size: 24rpx;
+		color: #ce0201;
+		padding: 2rpx 10rpx;
+		border-top-right-radius: 50rpx;
+		border-top-left-radius: 50rpx;
+		border-bottom-right-radius: 50rpx;
+		border-bottom-left-radius: 50rpx;
+		background-color: #f7d7da;
+	}
+
+	.popup {
+		z-index: 100;
+	}
+
+	.pop-comment {
+		background-color: #fff;
+		/* width: 690rpx; */
+		min-height: 240rpx;
+		display: flex;
+		align-items: center;
+		flex-direction: row;
+		justify-content: space-between;
+		box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.4);
+		padding: 20rpx 30rpx;
+		flex: 1;
+	}
+
+	.pop-input {
+		border-radius: 10rpx;
+		padding: 20rpx;
+		background-color: #f4f4f4;
+		min-height: 200rpx;
+	}
+
+	.textarea-placeholder {
+		font-size: 26rpx;
+		color: #999999;
+	}
+	
+	.pop-send {
+		text-align: center;
+		width: 100rpx;
+		height: 240rpx;
+		line-height: 240rpx;
+		align-items: center;
+		font-size: 32rpx;
+		color: #666666;
+		padding-left: 20rpx;
+	}
+	.lightColor {
+		color: #4F90CF;
+		font-weight: bold;
+	}
+</style>

@@ -1,0 +1,653 @@
+<template>
+	<view style="background-color: #fff;">
+		<view class="item-panel flex-col">
+			<view class="flex-row">
+				<view class="flex-col">
+					<view class="flex-row">
+						<text class="panel-title">{{detailItem.issueTitle}}</text>
+					</view>
+				</view>
+			</view>
+		</view>
+
+		<view class="question-user">
+			<view class="user-info pdT0">
+				<image class="user-img" :src="defaultHeadImg(detailItem.headPicUrl)" mode=""></image>
+				<view class="user-desc">
+					<view class="desc-top">
+						<text class="user-name">{{ detailItem.username }}</text>
+						<image src="@/static/img/ico-more.png" mode="aspectFill" class="ico-pb" @click="showUserMenu(detailItem.username, detailItem.userId)"></image>
+					</view>
+					<view class="desc-bottom">
+						<view class="user-titp">
+							<text class="user-time">{{ detailItem.publishDate | dateFormat('yyyy-MM-dd') }}</text>
+							<text class="user-tip">提出问题</text>
+						</view>
+					</view>
+				</view>
+			</view>
+		</view>
+
+		<view class="question-tool">
+			<view v-if="!detailItem.attentionStatus" class="tool-focus" @click="focusAdd">
+				<image class="focus-img" src="/static/img/faq/focus.png" mode=""></image>
+				<text class="focus-text">关注问题</text>
+			</view>
+			<view v-if="detailItem.attentionStatus" class="tool-focus" @click="focusCancel">
+				<image class="focus-img" src="/static/img/faq/focus.png" mode=""></image>
+				<text class="focus-text">已关注</text>
+			</view>
+			<view class="tool-answer" @click="answerClick">
+				<image class="answer-img" src="/static/img/faq/answer.png" mode=""></image>
+				<text class="answer-text">写回答</text>
+			</view>
+		</view>
+
+		<view class="question-order">
+			<text class="order-count">回答 {{ params.totalRecordNumber }}</text>
+			<!-- <view class="order-by">
+				<text class="order-text">默认排序</text>
+				<image class="order-img" src="/static/img/faq/order.png" mode=""></image>
+			</view> -->
+		</view>
+
+		<uni-popup class="idea-popup"  ref="popup" maskClick type="bottom">
+			<view class="question-form">
+				<view class="form-tool">
+					<text class="tool-cancel" @click="cancekClick">取消</text>
+					<text class="tool-publish" @click="publishClick">发布</text>
+				</view>
+				<form class="form-content">
+					<view class="uni-form-item uni-column">
+						<textarea class="form-desc" v-model="answerContent" row="10" maxlength="1000" placeholder-style="color:#b6b6b6" placeholder="有话要说,不吐不快" />
+					</view>
+				</form>
+			</view>
+		</uni-popup>
+
+		<share-box ref='change' :info="obj"></share-box>
+		<tip-box ref='tip' :info="tipInfo"></tip-box>
+		<uni-user-menu></uni-user-menu>
+		<eula-box ref='eula' :info="eulaInfo"></eula-box>
+	</view>
+	<!-- #ifdef APP-NVUE -->
+	<list class="scroll-v list" enableBackToTop="false" scroll-y loadmoreoffset="1000" @loadmore="loadMore()">
+		<cell>
+			<view v-for="(item, index) in params.data" :key="index" @click="commentPopup(item)">
+				<view class="item-panel flex-col">
+					<view class="flex-col">
+						<view class="item-ueser-panel flex-row" style="justify-content: space-between;">
+							<view class="flex-row" style="align-items: center;"  @click="goDetail(item.id)">
+								<image class="item-img" :src="defaultHeadImg(item.headPicUrl)" mode="aspectFill" ></image>
+								<text class="info-text user-name" style="font-size: 14px;">{{item.username}}</text>
+							</view>
+							<image src="@/static/img/ico-more.png" mode="aspectFill" class="ico-pb" @click="showUserMenu(item.username, item.userId)"></image>
+						</view>
+						<text class="panel-content" @click="goDetail(item.id)">{{item.content}}</text>
+					</view>
+					<view class="media-info">
+						<text class="info-text">{{ item.publishDate | dateFormat('yyyy-MM-dd') }}</text>
+						<text class="info-text">·</text>
+						<text class="info-text">{{item.likeCount|| 0}} 赞同</text>
+						<text class="info-text">·</text>
+						<text class="info-text">{{item.commentCount|| 0}} 评论</text>
+					</view>
+				</view>
+
+				<view class="space-line"></view>
+			</view>
+		</cell>
+		<cell v-if="params.data.length == 0 && !params.isLoading">
+			<uni-no-data></uni-no-data>
+		</cell>
+		<cell class="loading-more" v-if="params.isLoading || params.data.length > 10">
+			<text class="loading-more-text">{{params.loadingText}}</text>
+		</cell>
+	</list>
+	<!-- #endif -->
+</template>
+
+<script>
+import uniPopup from '@/components/uni-popup/uni-popup.vue';
+import ShareBox from "@/components/share.nvue"
+import EulaBox from "@/components/eula.nvue"
+import {
+	Api_GeIssue,
+	Api_GetAttentionAdd,
+	Api_GetIssueAnswer,
+	Api_Pullblack,
+    Api_GetUserAnswerList
+} from '@/api/faq.js';
+import { dateFormat, getUserInfo } from '@/utils/index.js';
+
+export default {
+	filters: { dateFormat },
+	components: {
+		uniPopup,
+		ShareBox,
+        EulaBox
+	},
+	data() {
+		return {
+			businessId:'',
+			obj: {},
+			answerOpen:false,
+			openShow:false,
+			detailItem:{},
+			answerContent:'',
+			commentValue:'',
+			commentOption: {
+				placeholder: '听君一席话，胜读十年书'
+			},
+			tipInfo:{type: 1, dialogVisible: false},
+            eulaInfo:{className: 'layer layer1', dialogVisible: false},
+            params: {
+                currentIndex: '',
+                currentId: '',
+                currentStatus: '',
+                data: [],
+                isLoading: true,
+                refreshText: "",
+                loadingText: '',
+                requestParams: { // 参数信息
+                    currentPage: 1,
+                    pageSize: 10,
+                    issueId: '',
+                    type: 1
+                },
+                totalPageNumber: 0, // 总页数
+                totalRecordNumber: 0, // 总数量
+            },
+		};
+	},
+	onNavigationBarButtonTap(e) {
+		this.obj = {
+			title: this.detailItem.issueTitle,
+			businessId: this.businessId,
+			summary: this.detailItem.issueDesc,
+			href: '/pages/faq/faq/detail&id=' + this.businessId,
+			type: 4 // 分享类型  0:资讯 1:专栏文章 2:信用百科 3:著作 6:专家 4:提问 5:回答 7:想法'
+		};
+		this.$refs.change.share();
+	},
+	onLoad: function(option) {
+		this.businessId = option.id;
+		this.getIssue()
+	},
+	methods: {
+		showUserMenu(name, userId){
+			this.$store.dispatch('saveUserMenu', true)
+			this.$store.dispatch('saveBlackInfo', {
+				name: name,
+				userId: userId
+			})
+		},
+		getIssue(){
+			Api_GeIssue({
+				id: this.businessId
+			}).then(res => {
+				this.detailItem = res.data;
+                this.getList();
+			});
+		},
+        getList() {
+            this.params.requestParams.issueId = this.businessId;
+            Api_GetUserAnswerList(this.params.requestParams).then(res => {
+                this.params.totalPageNumber = res.data.totalPageNumber;
+                this.params.totalRecordNumber = res.data.totalRecordNumber;
+                let resData = res.data.data;
+                if (resData.length) {
+                    if (this.params.requestParams.currentPage <= 1) {
+                        this.params.data = resData;
+                    } else {
+                        this.params.data = this.params.data.concat(resData);
+                    }
+                }
+            }).catch(err => {
+            });
+        },
+        loadMore(e) {
+            if (this.params.requestParams.currentPage >= this.params.totalPageNumber) {
+                this.params.loadingText = '加载完毕';
+                return;
+            }
+            setTimeout(() => {
+                this.params.requestParams.currentPage++;
+                this.getList(false);
+            }, 500);
+        },
+		defaultHeadImg(url) {
+			return url ? url : '/static/img/demo1.png';
+		},
+		backClick() {
+			uni.navigateBack({
+				delta: 1
+			});
+		},
+		openClick() {
+			this.answerOpen = !this.answerOpen;
+		},
+		focusAdd() {
+			Api_GetAttentionAdd({
+				businessId: this.businessId,
+				type: 1
+			}).then(res => {
+				if (res.statusCode === 2) {
+                    this.$refs.tip.show();
+				} else {
+					uni.showToast({
+						icon: 'none',
+						title: '关注成功',
+						duration: 2000
+					});
+				}
+				this.getIssue()
+			});
+		},
+		focusCancel() {
+            Api_GetAttentionAdd({
+				businessId: this.businessId,
+				type: 1
+			}).then(res => {
+				uni.showToast({
+					icon: 'none',
+					title: '取消关注成功',
+					duration: 2000
+				});
+				this.getIssue()
+			});
+		},
+		answerClick() {
+			getUserInfo(true).then(res => {
+				if (res.isLogin && res.forbidden === true) {
+					uni.showToast({
+						icon:'none',
+						title: '您已被禁言，禁言后您将不能再平台上做任何留言！',
+						duration: 2000
+					});
+					return;
+				}
+				const platform = uni.getSystemInfoSync().platform;
+				if (platform == 'ios' && !uni.getStorageSync('eula')) {
+				    this.$refs.eula.showEula();
+				} else {
+				    this.commit();
+				}
+			});
+		},
+        commit() {
+            this.$refs.popup.open();
+        },
+		cancekClick() {
+            this.$refs.popup.close();
+		},
+		publishClick() {
+			if (!this.answerContent) {
+				uni.showToast({
+					icon: 'none',
+					title: '请输入回答内容',
+					duration: 2000
+				});
+				return false;
+			}
+			Api_GetIssueAnswer({
+				answerContent: this.answerContent,
+				issueId: this.businessId
+			}).then(res => {
+                if(res.statusCode === 1) {
+                    this.answerContent = '';
+                    uni.showToast({
+                        icon: 'none',
+                        title: '回答成功',
+                        duration: 2000
+                    });
+                    this.params.requestParams.currentPage = 1;
+                    this.getIssue()
+                    this.$refs.popup.close();
+                }
+			});
+		},
+		commentPopup(item) {
+			// this.commentOption.commentCount = item.commentCount;
+			// this.commentOption.likeCount = item.likeCount;
+			// this.$refs.commentpopup.open();
+		},
+		commentClick() {
+			Api_GetCommentSave({
+				beUserId: this.detailItem.userId, //被回复人id（type=0需要填写）
+				businessId: this.businessId, //业务表主键(关联各业务表id)
+				businessType: 1, // 1:回答 2:文章 3:想法 ,
+				businessUserId: 'string', //业务表创建的用户id（type = 1 的时候必填） ,
+				commentContent: this.commentValue, //评论内容
+				replyId: 'string', // 回复表id(关联自身的id，针对评论回复的回复内容) ,
+				type: 'string' //0：回复；1:评论
+			}).then(res => {
+				if (res.statusCode === 3) {
+					uni.showToast({
+						icon:'none',
+						title: res.message,
+						duration: 2000
+					});
+				}
+			});
+		},
+		praiseclick() {
+			Api_GetLikeSave({
+				userId: this.detailItem.userId, //被回复人id（type=0需要填写）
+				businessId: this.businessId, //业务表主键(关联各业务表id)
+				businessType: 1 // 1:回答 2:文章 3:想法 ,
+			}).then(res => {});
+		},
+		shareclick() {
+			console.log(this.commentValue);
+		},
+		goDetail(id) {
+            uni.navigateTo({
+                url: '/pages/faq/faq/answer-detail?id=' + id
+            });
+        }
+	}
+};
+</script>
+
+<style scoped>
+@import '@/common/css/iconfont.css';
+
+page {
+	background-color: #ffffff;
+}
+.pdT0 {
+	padding-top: 0 !important;
+}
+.pdB0 {
+	padding-bottom: 0 !important;
+}
+
+.space-line {
+	background-color: #f7f7f7;
+	height: 20rpx;
+	width: 750rpx;
+}
+.scroll-v {
+	flex: 1;
+	/* #ifndef MP-ALIPAY */
+	flex-direction: column;
+	/* #endif */
+	width: 750rpx;
+}
+
+/*  */
+.question-user{
+	display: flex;
+	flex-direction: row;
+	align-items: flex-end;
+	justify-content: space-between;
+	padding:15rpx 20rpx;
+	background-color: #fff;
+}
+.user-info{
+	flex: 1;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+.user-img{
+	width: 62rpx;
+	height: 62rpx;
+	margin-right: 15rpx;
+	border-radius: 200rpx;
+}
+.user-desc{
+	flex: 1;
+	color: #999999;
+	font-size: 24rpx;
+	display: flex;
+	align-items: stretch;
+	flex-direction: column;
+}
+.desc-top{
+  line-height: 1.4;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+.ico-pb {
+	width: 35rpx;
+	height: 35rpx;
+}
+.desc-bottom{
+	flex: 1;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+}
+.user-name{
+	color: #000000;
+	font-size: 30rpx;
+	line-height: 44rpx;
+	lines: 1;
+	text-overflow: ellipsis;
+	width: 500rpx;
+}
+.user-titp{
+	flex: 1;
+	flex-direction: row;
+	align-items: center;
+}
+.user-time{
+	color: #999999;
+	font-size: 24rpx;
+	margin-right: 12rpx;
+}
+.user-tip{
+	color: #999999;
+	font-size: 24rpx;
+}
+.user-right{
+	text-align: right;
+}
+.right-tip{
+	color: #666666;
+	font-size: 24rpx;
+}
+
+/* 关注/写回答模块 */
+.question-tool{
+	height: 74rpx;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	background-color: #fbfbfb;
+	margin: 20rpx 0;
+}
+.tool-focus{
+	flex: 1;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+}
+.focus-img{
+	width: 30rpx;
+	height: 27rpx;
+	margin-right: 14rpx;
+}
+.focus-text{
+	color:#ce0201;
+	font-size: 28rpx;
+}
+.tool-answer{
+	flex: 1;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+}
+.answer-img{
+	width: 28rpx;
+	height: 28rpx;
+	margin-right: 14rpx;
+}
+.answer-text{
+	color:#ce0201;
+	font-size: 28rpx;
+}
+
+
+/* 排序模块 */
+.question-order {
+	font-size: 26rpx;
+	height: 74rpx;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 20rpx;
+}
+
+.order-count{
+	font-size: 28rpx;
+	color: #000000;
+}
+.order-text{
+	font-size: 28rpx;
+	color: #999999;
+}
+.order-by {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+}
+.order-img {
+	width: 16rpx;
+	height: 10rpx;
+	margin-left: 14rpx;
+	margin-bottom: 4rpx;
+}
+
+.idea-popup{
+	/* #ifndef APP-PLUS */
+	display: flex;
+	/* #endif */
+	flex: 1;
+	z-index: 999999;
+}
+
+/*  */
+.question-form{
+	flex: 1;
+	/* #ifndef APP-PLUS */
+	display: flex;
+	/* #endif */
+	flex-direction: column;
+	height: 900rpx;
+	border-top-left-radius: 20rpx;
+	border-top-right-radius: 20rpx;
+	background-color: #fff;
+}
+.form-tool{
+	/* #ifndef APP-PLUS */
+	display: flex;
+	/* #endif */
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	padding: 25rpx 0 14rpx;
+	margin: 0 24rpx;
+	border-bottom-width: 1px;
+	border-bottom-color: #dddddd;
+	border-style: solid;
+}
+.tool-cancel{
+	font-size: 30rpx;
+	color: #999999;
+}
+.tool-publish{
+	font-size: 30rpx;
+	color: #333333;
+}
+.form-title{
+	font-size: 30rpx;
+}
+.form-desc{
+	font-size: 26rpx;
+	margin: 20rpx 24rpx;
+	width: calc( 100% - 48rpx )
+}
+
+
+/* 底部用户模块 */
+.flex-col {
+	flex-direction: column;
+}
+.flex-row {
+	flex-direction: row;
+}
+
+.item-panel {
+	background-color: #ffffff;
+	padding: 35rpx 20rpx 30rpx 20rpx;
+}
+.panel-title {
+	max-width: 640rpx;
+	font-size: 32rpx;
+	line-height: 44rpx;
+	color: #000;
+	lines: 1;
+	text-overflow: ellipsis;
+	padding-bottom: 20rpx;
+}
+
+.panel-content {
+	width: 710rpx;
+	font-size: 28rpx;
+	color: #555555;
+	line-height: 40rpx;
+	lines: 3;
+	text-overflow: ellipsis;
+}
+.no-content{
+	color: #dddddd;
+}
+
+/* 底部数据块 */
+.media-info {
+	flex-direction: row;
+	align-items: flex-end;
+	margin-top: 16rpx;
+}
+.info-text {
+	margin-right: 20rpx;
+	color: #999999;
+	font-size: 24rpx;
+}
+
+/* 用户块 */
+.item-ueser-panel{
+	margin-top: 10rpx;
+	margin-bottom: 10rpx;
+	flex-direction: row;
+	align-items: center;
+}
+.item-img{
+	width: 56rpx;
+	height: 56rpx;
+	margin-right: 10rpx;
+	border-radius: 200rpx;
+}
+.loading-more {
+	align-items: center;
+	justify-content: center;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	text-align: center;
+}
+
+.loading-more-text {
+	font-size: 28rpx;
+	color: #999;
+}
+</style>

@@ -1,0 +1,143 @@
+<template>
+	<view class="comment-list">
+		<view v-for="(item, index) in dataList" :key="index" v-if="dataList.length > 0">
+			<comment-item ref="commentitem" @coclick="commentClick($event,index)" @loadListData="loadListData" v-model="dataList[index]"></comment-item>
+		</view>
+
+		<uni-load-more :status="status" :contentText="contentText" @clickLoadMore="clickLoadMore" v-if="!showNoData && !loading"></uni-load-more>
+
+		<view class="no-data" v-if="showNoData && !loading">
+			<uni-no-data></uni-no-data>
+		</view>
+
+		<!-- 加载图标 -->
+		<mixLoading class="mix-loading" v-if="loading"></mixLoading>
+	</view>
+</template>
+
+<script>
+
+    import mixLoading from '@/components/mix-loading/mix-loading.vue';
+	import CommentItem from './comment-item.nvue';
+	import {
+		Api_GetCommentPage,
+	} from '@/api/faq.js';
+	export default {
+		components: {
+			CommentItem,
+			mixLoading
+		},
+		data() {
+			return {
+				loading: true,
+				showNoData: false,
+				dataList: [],
+				currentPage: 0,
+				totalPageNumber: 0,
+				isChangeTab: true,
+				curCommentItem: 0,
+				status: 'more',
+				contentText: {
+					contentdown: "—— 点击显示更多 ——",
+					contentrefresh: "正在加载...",
+					contentnomore: "—— 没有更多数据了 ——"
+				}
+			};
+		},
+		props: {
+			value: {
+				type: Object,
+				default: function() {
+					return {}
+				}
+			}
+		},
+		mounted() {
+			this.loadListData()
+		},
+		watch:{
+			currentPage: function(val) {
+				return this.currentPage = val;
+			},
+			dataList: function(val) {
+				return this.dataList = val;
+			},
+		},
+		methods: {
+			clickLoadMore() {
+				// 判断是否加载更多
+				if (this.status === 'more') {
+					this.loadListData();
+				}
+			},
+			userImgUrl(url) {
+				return url ? url : '/static/img/demo1.png';
+			},
+			loadListData(fromChild) {
+				this.loading = true;
+				if (this.totalPageNumber == 0) {
+					this.currentPage = 1;
+				} else if (this.currentPage < this.totalPageNumber) {
+					this.currentPage = this.currentPage + 1;
+				}
+				
+				// 判断是否从子组件删除评论后刷新
+				if (fromChild) {
+					this.currentPage = 1;
+					this.dataList = [];
+				}
+				
+				// uni.showLoading();
+				Api_GetCommentPage({
+						businessId: this.value.id,
+						currentPage: this.currentPage,
+						pageSize: 10
+					}).then(curPageData => {
+						let list = curPageData.data.data;
+						// 获取评论总条数
+						const totalRecordNumber = curPageData.data.totalRecordNumber
+						this.$store.dispatch('setCommentCount', totalRecordNumber);
+						
+						this.totalPageNumber = curPageData.data.totalPageNumber;
+
+						// uni.hideLoading();
+						if (this.currentPage === 1) {
+							this.dataList = [];
+						}
+						if (this.currentPage == curPageData.data.totalPageNumber) {
+							this.status = 'noMore';
+						} else {
+							this.status = 'more'
+						}
+
+						this.dataList = this.dataList.concat(list);
+						this.showNoData = !this.dataList.length;
+						this.$nextTick(() => {
+							if (this.isChangeTab) {
+								this.isChangeTab = false;
+							}
+						});
+						
+						this.loading = false;
+					})
+					.catch(err => {
+						console.log(err)
+					});
+			},
+			commentClick(item, index) {
+				console.log(index)
+				this.curCommentItem = index;
+				this.$emit('coclick', item);
+			},
+			itemClick() {
+				this.$refs.commentitem[this.curCommentItem].itemClick();
+			}
+		}
+	};
+</script>
+<style scoped>
+	.comment-list {
+		position: relative;
+		padding-bottom: 98rpx;
+	}
+</style>

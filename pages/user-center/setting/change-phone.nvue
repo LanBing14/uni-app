@@ -1,0 +1,273 @@
+<template>
+	<view class="phone">
+		<view class="" v-if="step === 1">
+			<text class="title">更换绑定新手机号成功后
+	即可以用新手机号及当前密码登录</text>
+			<form class="form" @submit="submit">
+				<view class="input-box">
+					<text class="pre-code">+86</text>
+					<input type="text" v-model="postData.oldMobile" value="" class="input" placeholder="请输入当前绑定手机号" />
+				</view>
+				<view class="input-box">
+					<text class="pre-code">+86</text>
+					<input type="text" v-model="postData.value" value="" class="input" placeholder="请输入新手机号" />
+				</view>
+				<button @click="nextClick" class="yd-btn yd-btn-type1" type="primary">下一步</button>
+			</form>
+		</view>
+		<view class="" v-if="step === 2">
+			<text class="title">验证码已发送至{{ postData.value.substring(0,3) + '****' + postData.value.substring(7,11) }}</text>
+			<form class="form" @submit="submit">
+				<view class="input-box">
+					<input type="text" v-model="postData.code" value="" class="input" placeholder="输入验证码" />
+					<text class="get-code" @click="sedCode" :disabled="disabledSend" >
+						{{ sum === 61 ? "获取验证码": sum + "s后重新获取" }}
+					</text>
+				</view>
+				<button v-if="!showBack" @click="finishClick" class="yd-btn yd-btn-type1" type="primary">完成</button>
+				<button v-if="showBack" @click="backClick" class="yd-btn yd-btn-type1" type="primary">上一步</button>
+			</form>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		Api_SendMsg
+	} from '@/api/baseApi.js'
+	import {
+		Api_GetMobileRegister,
+		Api_SaveNewMobile
+	} from '@/api/userCenter.js'
+	import {
+	    Api_GetInfo
+	} from '@/api/userCenter.js'
+	import {Api_Logout} from "@/api/login.js";
+	export default {
+		data() {
+			return {
+				step:1,
+				disabledSend:false,
+				timer:'',
+				sum:61,
+				showBack:false,
+				postData:{
+					code: '',
+					oldMobile: '',
+					value: '',
+				},
+				userInfo:{},
+			}
+		},
+		mounted(){
+			Api_GetInfo().then(res=>{
+			    if (res.statusCode === 1) {
+					this.userInfo = res.data;
+				}
+			})
+		},
+		methods: {
+			backClick(){
+				this.step = 1;
+			},
+			sedCode(){
+				if(this.disabledSend){
+					return false;
+				}
+				uni.showLoading({
+					icon:'none',
+					title: '发送中...'
+				})
+				this.disabledSend = true;
+				this.sum = 61;
+				this.timer = setInterval(() => {
+					this.sum--;
+					if (this.sum < 1) {
+						this.sum = 61;
+						this.disabledSend = false;
+						clearInterval(this.timer);
+					}
+				}, 1000);
+				Api_SendMsg({
+					mobile: this.postData.value,
+				}).then(res => {
+					uni.hideLoading();
+					if (res.statusCode == '2') {
+						uni.showToast({
+							icon:'none',
+							 title: '发送验证码失败',
+							 duration: 2000
+						});
+						this.sum = 61;
+						this.disabledSend = false;
+						clearInterval(this.timer);
+					}
+				}).catch(err=>{
+				   uni.hideLoading();
+				   uni.showToast({
+					icon:'none',
+					title: '发送验证码失败',
+					duration: 2000
+				   });
+				})
+			},
+			nextClick(){
+				const _self = this;
+				if(_self.postData.oldMobile === ''){
+					uni.showToast({
+						icon:'none',
+						title: '请输入当前手机号',
+						duration: 2000
+					});
+					return false;
+				}
+				if(_self.postData.oldMobile !== this.userInfo.mobile){
+					uni.showToast({
+						icon:'none',
+						title: '当前绑定手机号错误',
+						duration: 2000
+					});
+					return false;
+				}
+				if(_self.postData.value === ''){
+					uni.showToast({
+						icon:'none',
+						title: '请输入新手机号',
+						duration: 2000
+					});
+					return false;
+				}
+				var phonereg=/^[1][3,4,5,6,7,8,9][0-9]{9}$/;
+				if (!phonereg.test(_self.postData.value)||!phonereg.test(this.postData.oldMobile)) {
+					uni.showToast({
+						icon:'none',
+						title: '手机格式错误',
+						duration: 2000
+					});
+					return false;
+				}
+				Api_GetMobileRegister({
+					mobile:_self.postData.value
+				}).then(res =>{
+					if(res.statusCode === 1){
+						if(!res.data){
+							_self.step = 2;
+							_self.showBack = false;
+						}else{
+							uni.showToast({
+								icon:'none',
+								title: '新手机号已被注册',
+								duration: 2000
+							});
+						}
+					}
+				});
+			},
+			finishClick(){
+				if(this.postData.code === ''){
+					uni.showToast({
+						icon:'none',
+						title: '请输入验证码',
+						duration: 2000
+					});
+					return false;
+				}
+				Api_SaveNewMobile(this.postData).then(res =>{
+					const _self = this;
+					switch(res.statusCode){
+						case 4:
+							uni.showToast({
+								icon:'none',
+								title: '新手机号已经被注册了！',
+								duration: 2000
+							});
+							_self.showBack = true;
+						break;
+						case 2:
+							uni.showToast({
+								icon:'none',
+								title: '验证码错误',
+								duration: 2000
+							});
+							_self.showBack = true;
+						break;
+						case 1:
+							// 调用后台注销token
+							Api_Logout().then(res => {
+								// 清空 缓存
+                                uni.removeStorageSync("user-token");
+                                uni.removeStorageSync("userInfo");
+								// 跳转登录
+								uni.reLaunch({
+									url: '/pages/user-center/user-center'
+								});
+								uni.showToast({
+									icon: 'none',
+									title: '请重新登录',
+									duration: 2000
+								});
+							});
+							break;
+						default:
+							uni.showToast({
+								icon:'none',
+								title: '修改失败',
+								duration: 2000
+							});
+						break;
+					}
+				});
+			}
+		}
+	}
+</script>
+
+<style>
+.phone {
+	flex: 1;
+	flex-direction: column;
+	align-items: center;
+}
+.title {
+	font-size: 32rpx;
+	text-align: center;
+	margin-top: 67rpx;
+	margin-bottom: 97rpx;
+}
+.form {
+	width: 600rpx;
+	position: relative;
+}
+.input-box {
+	position: relative;
+	flex-direction: row;
+	border-bottom-width: 2rpx;
+	border-bottom-color: #e9e9eb;
+	border-bottom-style: solid;
+}
+.pre-code {
+	height: 42rpx;
+	width: 82rpx;
+	border-right-width: 2rpx;
+	border-right-color: #e9e9eb;
+	border-right-style: solid;
+	margin-top: 30rpx;
+}
+.input {
+	width: 518rpx;
+	height: 100rpx;
+	font-size: 32rpx;
+	line-height: 100rpx;
+	padding-left: 30rpx;
+}
+.yd-btn {
+	margin-top: 120rpx;
+}
+.get-code {
+	position: absolute;
+	color: #ce0201;
+	right: 0;
+	bottom: 5rpx;
+	font-size: 28rpx;
+}
+</style>

@@ -1,0 +1,116 @@
+<template>
+	<view>
+		<uni-nav-bar class="nav-topbar" title="微博登录" @clickLeft="backClick" :fixed="false" color="#ffffff" background-color="#d51e1e" statusBar="true" left-icon="arrowleft">
+		</uni-nav-bar>
+		<view class="thrid-top">
+			<view>
+				<image class="thrid-img" src="/static/img/login/sinatl.png" mode=""></image>
+				<text class="thrid-desc" >微博</text>
+			</view>
+			<view>
+				<image class="thrid-arr" src="/static/img/login/arrr.png" mode=""></image>
+				<image class="thrid-arr" src="/static/img/login/arrl.png" mode=""></image>
+			</view>
+			<view>
+				<image class="thrid-img" src="/static/img/login/app.png" mode=""></image>
+				<text class="thrid-desc" >原点信用</text>
+			</view>
+		</view>
+		<view class="thrid-user">
+			<image class="user-img" src="/static/img/demo1.png" mode=""></image>
+			<text class="user-name" >信用小白</text>
+		</view>
+		<view class="thrid-login">
+			<text class="thrid-sure">确定</text>
+		</view>
+	</view>
+</template>
+<script>
+	export default {
+		data() {
+			return {
+				
+			}
+		},
+		methods: {
+			backClick(){
+				uni.navigateBack({
+				    delta: 1
+				});
+			},
+		}
+	}
+</script>
+
+<style>
+page{
+	background-color: #f7f7f7;
+}
+.thrid-top{
+	padding-top: 103rpx;
+	padding-bottom: 84rpx;
+	display: flex;
+	align-items: flex-start;
+	flex-direction: row;
+	justify-content: center;
+	border-bottom-color: #e2e2e2;
+	border-bottom-width: 1px;
+	background-color: #ffffff;
+}
+.thrid-img{
+	width: 100rpx;
+	height: 100rpx;
+	margin-left: 22rpx;
+	margin-right: 22rpx;
+}
+.thrid-arr{
+	width: 150rpx;
+	height: 20rpx;
+	margin-top: 20rpx;
+}
+.thrid-desc{
+	font-size: 28rpx;
+	color: #555555;
+	text-align: center;
+}
+.thrid-user{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-start;
+	background-color: #ffffff;
+	padding-top: 42rpx;
+	padding-bottom: 42rpx;
+}
+.user-img{
+	width: 64rpx;
+	height: 64rpx;
+	margin-right: 22rpx;
+	margin-left: 76rpx;
+	border-radius: 200rpx;
+}
+.user-name{
+	font-size: 28rpx;
+	color: #000000;
+	lines: 1;
+	text-overflow: ellipsis;
+	width: 500rpx;
+}
+
+.thrid-login{
+	margin-top: 90rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.thrid-sure{
+	color: #fff;
+	width: 668rpx;
+	height: 188rpx;
+	font-size: 30rpx;
+	padding-top: 56rpx;
+	text-align: center;
+	background-image: url(../../static/img/login/btn.png);
+	background-size: 668rpx 188rpx;
+}
+</style>

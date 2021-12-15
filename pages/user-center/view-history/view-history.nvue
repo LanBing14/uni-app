@@ -1,0 +1,297 @@
+<template>
+	<list class="scroll-v list" enableBackToTop="true" scroll-y loadmoreoffset="500" @loadmore="getMorePageList()">
+		<refresh class="refresh" @refresh="onrefresh()" @pullingdown="onpullingdown" :display="refreshing ? 'show' : 'hide'">
+			<div class="refresh-view">
+				<image class="refresh-icon" :src="refreshIcon" :style="{width: (refreshing || pulling) ? 0: '30px'}" :class="{'refresh-icon-active': refreshFlag}"></image>
+				<loading-indicator class="loading-icon" animating="true" v-if="refreshing"></loading-indicator>
+				<text class="loading-text">{{refreshText}}</text>
+			</div>
+		</refresh>
+
+		<cell v-for="(entity, index) in pageList" :key="index">
+			<!-- 列表 -->
+			<view v-if="index == 0">
+				<view class="list-h1">{{entity.browse_date}}</view>
+			</view>
+			<view v-else-if="pageList[index - 1].browse_date != entity.browse_date">
+				<view class="list-h1">{{entity.browse_date}}</view>
+			</view>
+
+			<view class="center-list" @click="goToPage(entity.browse_type, entity.business_id)">
+				<view class="history-list-item border-bottom">
+					<text class="his-text">{{entity.title}}</text>
+					<text class="his-tag">{{entity.typeName}}</text>
+				</view>
+			</view>
+		</cell>
+		<cell v-if="pageList.length == 0 && !isLoading">
+			<uni-no-data></uni-no-data>
+		</cell>
+		<cell class="loading-more" v-if="isLoading || pageList.length > 10">
+			<text class="loading-more-text">{{loadingText}}</text>
+		</cell>
+	</list>
+</template>
+
+<script>
+	import {
+		Api_viewHistory
+	} from "@/api/userCenter.js";
+	import * as utils from "@/utils/index.js";
+
+export default {
+		data() {
+			return {
+				refreshIcon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAB5QTFRFcHBw3Nzct7e39vb2ycnJioqK7e3tpqam29vb////D8oK7wAAAAp0Uk5T////////////ALLMLM8AAABxSURBVHja7JVBDoAgDASrjqj//7CJBi90iyYeOHTPMwmFZrHjYyyFYYUy1bwUZqtJIYVxhf1a6u0R7iUvWsCcrEtwJHp8MwMdvh2amHduiZD3rpWId9+BgPd7Cc2LIkPyqvlQvKxKBJ//Qwq/CacAAwDUv0a0YuKhzgAAAABJRU5ErkJggg==",
+				refreshing: false,
+				refreshText: '',
+				refreshFlag: true,
+				pulling: false,
+				isLoading: true,
+				loadingText: '',
+
+				title: '浏览历史',
+				currentPage: 1,
+				totalPageNumber: 0,
+				pageSize: 15,
+				pageList: []
+			}
+		},
+		onShow() {
+			this.getPageList(true);
+		},
+		methods: {
+			onpullingdown(e) {
+				if (this.refreshing || this.pulling) {
+					return;
+				}
+				if (Math.abs(e.pullingDistance) > Math.abs(e.viewHeight)) {
+					this.refreshFlag = true;
+					this.refreshText = "释放立即刷新";
+				} else {
+					this.refreshFlag = false;
+					this.refreshText = "下拉可以刷新";
+				}
+			},
+			onrefresh(e) {
+				if (!this.refreshFlag) {
+					return;
+				}
+				this.refreshing = true;
+				this.refreshText = "正在刷新...";
+
+				setTimeout(() => {
+					this.getPageList(true);
+					this.pulling = true;
+					this.refreshing = false;
+					this.refreshFlag = false;
+					this.refreshText = "已刷新";
+					setTimeout(() => {
+						this.pulling = false;
+					}, 500);
+				}, 2000);
+			},
+			goToPage(type, id) {
+				let url;
+				// 跳转指定页面
+				if ('0' === type || '1' === type) {
+					// 资讯/文章
+					url = '/pages/details/details?id=' + id;
+				} else if ('2' === type) {
+					// 问题
+					url = '/pages/faq/faq/detail-all?id=' + id;
+				} else if ('3' === type) {
+					// 著作
+					url = '/pages/details/book-detail?id=' + id;
+				} else if ('4' === type) {
+					// 专家
+					url = '/pages/specialist/specialist?expertId=' + id;
+				} else if ('5' === type) {
+					// 想法
+					url = '/pages/faq/idea-detail?id=' + id;
+				}
+				if (!utils.strIsNull(url)) {
+					uni.navigateTo({
+						url: url
+					});
+				}
+			},
+			getPageList(flag) {
+				if (flag) {
+					this.currentPage = 1;
+				}
+				Api_viewHistory(this.currentPage, this.pageSize).then(res => {
+					if (res.statusCode === 1) {
+						this.totalPageNumber = res.data.totalPageNumber;
+						if (flag) {
+							this.pageList = this.processData(res.data.data);
+						} else {
+							// 叠加数据
+							this.pageList = this.pageList.concat(this.processData(res.data.data));
+						}
+
+					}
+					this.isLoading = false;
+				}).catch(err => {
+					console.log(err);
+					this.isLoading = false;
+				});
+			},
+			getMorePageList() {
+				if (this.currentPage >= this.totalPageNumber) {
+					this.loadingText = '加载完毕';
+					return;
+				}
+				setTimeout(() => {
+					this.currentPage++;
+					this.getPageList(false);
+				}, 500);
+
+			},
+			processData(pageList) {
+				if (utils.arrIsNull(pageList)) {
+					return [];
+				}
+
+				pageList.forEach(data => {
+					data.browse_date = this.processTime(data.browse_date);
+					data.typeName = this.processType(data.browse_type);
+				});
+				return pageList;
+			},
+			processType(type) {
+				// 浏览类型  0:资讯  1:文章  2:问题  3:著作  4:专家  5:想法
+				if ('0' === type) {
+					return '资讯';
+				} else if ('1' === type) {
+					return '文章';
+				} else if ('2' === type) {
+					return '问题';
+				} else if ('3' === type) {
+					return '著作';
+				} else if ('4' === type) {
+					return '专家';
+				} else if ('5' === type) {
+					return '想法';
+				}
+			},
+			// 处理时间
+			processTime(timestamp) {
+				let browseTime = new Date(timestamp);
+				let d = new Date();
+				d.setHours(0);
+				d.setMinutes(0);
+				d.setSeconds(0);
+				d.setMilliseconds(0);
+				let yesterday = d.getTime() - 86400000;
+				let beforeYesterday = d.getTime() - 172800000;
+				if (browseTime.toDateString() === new Date().toDateString()) {
+					return '今天';
+				} else if (timestamp > yesterday) {
+					return '昨天';
+				} else if (timestamp > beforeYesterday) {
+					return '前天';
+				} else {
+					return utils.dateFormat(timestamp, "yyyy-MM-dd")
+				}
+			}
+		}
+	}
+</script>
+
+<style scoped>
+	/* 用户中心公共css */
+	@import '../../../common/css/uCenter/uCenter.css';
+
+	.list-h1 {
+		margin: 0 24rpx;
+		padding: 30rpx 0;
+		font-size: 30rpx;
+		text-align: left;
+		color: #000;
+		background-color: #f7f7f7;
+	}
+
+	.center-list {
+		margin: 0;
+		background-color: #fff;
+	}
+
+	.history-list-item {
+		padding: 18rpx 0;
+		margin: 0 24rpx;
+		flex-direction: column;
+	}
+
+	.his-text {
+		font-size: 32rpx;
+		color: #333;
+		line-height: 48rpx;
+		margin-bottom: 15rpx;
+	}
+
+	.his-tag {
+		font-size: 24rpx;
+		color: #b5b5b5;
+	}
+
+	.scroll-v {
+		flex: 1;
+		/* #ifndef MP-ALIPAY */
+		flex-direction: column;
+		/* #endif */
+		width: 750rpx;
+	}
+
+	.refresh {
+		width: 750rpx;
+		height: 64px;
+		justify-content: center;
+	}
+
+	.refresh-view {
+		flex-direction: row;
+		flex-wrap: nowrap;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.refresh-icon {
+		width: 30px;
+		height: 30px;
+		transition-duration: .5s;
+		transition-property: transform;
+		transform: rotate(0deg);
+		transform-origin: 15px 15px;
+	}
+
+	.loading-icon {
+		width: 20px;
+		height: 20px;
+		margin-right: 5px;
+		color: #999999;
+	}
+
+	.loading-text {
+		margin-left: 2px;
+		font-size: 16px;
+		color: #999999;
+	}
+
+	.loading-more {
+		align-items: center;
+		justify-content: center;
+		padding-top: 10px;
+		padding-bottom: 10px;
+		text-align: center;
+	}
+
+	.loading-more-text {
+		font-size: 28rpx;
+		color: #999;
+	}
+
+	.refresh-icon-active {
+		transform: rotate(180deg);
+	}
+</style>

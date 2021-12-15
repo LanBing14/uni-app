@@ -1,0 +1,199 @@
+<template>
+	<view>
+		<!-- 第一次操作提示框 -->
+		<view class="share" v-if="info.dialogVisible" :class="shareClass">
+			<!-- click.stop阻止事件冒泡，防止弹出遮罩时点击列表页 -->
+			<view class="mask" @click.stop=""></view>
+			<view :class="info.className ? info.className : 'layer'" :style="{top: newtop + 'rpx'}">
+				<view class="titleBox" v-if="info.type === 0"><text class="title">收藏成功</text></view>
+				<view class="titleBox" v-if="info.type === 1"><text class="title">关注问题成功</text></view>
+				<view class="titleBox" v-if="info.type === 2"><text class="title">关注专家成功</text></view>
+				<view class="titleBox" v-if="info.type === 3"><text class="title">发布问题成功</text></view>
+				<view class="titleBox" v-if="info.type === 4"><text class="title">发布想法成功</text></view>
+				<view class="titleBox" v-if="info.type === 0"><text class="title2">收藏成功，您可以在我的-我的收藏栏目中查看此资讯</text></view>
+				<view class="titleBox" v-if="info.type === 1"><text class="title2">关注成功，您可以在我的-我的关注中查看回答更新</text></view>
+				<view class="titleBox" v-if="info.type === 2"><text class="title2">关注成功，您可以在我的-我的关注中查看专家作品更新</text></view>
+				<view class="titleBox" v-if="info.type === 3"><text class="title2">发布成功，您可以在我的-我的创作中查看问题回答更新</text></view>
+				<view class="titleBox" v-if="info.type === 4"><text class="title2">发布成功，您可以在我的-我的创作中查看已发布的想法</text></view>
+				<view class="list">
+					<view class="box">
+						<swiper class="swiper-box" autoplay="true" interval="2000" circular="true">
+							<swiper-item v-if="info.type === 0">
+								<view class="swiper-item"><image class="box-image" src="/static/img/tip/sccg.png" mode="aspectFill"></image></view>
+							</swiper-item>
+							<swiper-item  v-if="info.type === 1">
+								<view class="swiper-item"><image class="box-image" src="/static/img/tip/wdgz.png" mode="aspectFill"></image></view>
+							</swiper-item>
+							<swiper-item  v-if="info.type === 1">
+								<view class="swiper-item"><image class="box-image" src="/static/img/tip/gzwt.png" mode="aspectFill"></image></view>
+							</swiper-item>
+							<swiper-item  v-if="info.type === 2">
+								<view class="swiper-item"><image class="box-image"  src="/static/img/tip/wdgz.png" mode="aspectFill"></image></view>
+							</swiper-item>
+							<swiper-item  v-if="info.type === 2">
+								<view class="swiper-item"><image class="box-image"  src="/static/img/tip/gzzj.png" mode="aspectFill"></image></view>
+							</swiper-item>
+							<swiper-item  v-if="info.type === 3">
+								<view class="swiper-item"><image class="box-image"  src="/static/img/tip/wdcz.png" mode="aspectFill"></image></view>
+							</swiper-item>
+							<swiper-item  v-if="info.type === 3">
+								<view class="swiper-item"><image class="box-image"  src="/static/img/tip/fbtw.png" mode="aspectFill"></image></view>
+							</swiper-item>
+							<swiper-item  v-if="info.type === 4">
+								<view class="swiper-item"><image class="box-image"  src="/static/img/tip/wdcz.png" mode="aspectFill"></image></view>
+							</swiper-item>
+							<swiper-item  v-if="info.type === 4">
+								<view class="swiper-item"><image class="box-image"  src="/static/img/tip/fbxf.png" mode="aspectFill"></image></view>
+							</swiper-item>
+						</swiper>
+					</view>
+				</view>
+				<view class="h1Box" @tap="hideShare"><text class="h1">我知道了</text></view>
+			</view>
+
+		</view>
+
+	</view>
+</template>
+
+<script>
+    import { Api_AddShare } from "@/api/share.js";
+    import { Api_SaveScore } from "@/api/points.js";
+    export default {
+        props: {
+            info: {
+                type: Object,
+                dialogVisible: Boolean,
+                className: Object,
+                default: function(e) {
+                    return {
+                        type: 2, // 提示类型  0:收藏 1:关注问题 2:关注专家 3:发布问题 4:发表想法
+                        dialogVisible: false,
+                        className: 'layer'
+                    }
+                }
+            }
+        },
+        data() {
+            return {
+                shareClass: '',
+                newtop: 0
+            }
+        },
+        methods: {
+            show(){
+				uni.hideTabBar();
+                let thiss = this;
+                uni.getSystemInfo({
+                    success: function (res) {
+                        let top = (res.windowHeight - 338);
+                        thiss.newtop = top;
+                    }
+                });
+
+                this.info.dialogVisible = true;
+            },
+            hideShare(){
+                uni.showTabBar();
+                this.info.dialogVisible = false;
+            }
+        }
+    }
+</script>
+
+<style scoped>
+	.mask {
+		background-color: rgba(0,0,0,.5);
+		position: fixed;
+		width: 750rpx;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 4500;
+	}
+	.layer {
+		width: 600rpx;
+		position: fixed;
+		z-index: 5000;
+		left: 79.75rpx;
+		padding: 10rpx 24rpx 0rpx 24rpx;
+		top: 170rpx;
+		background-color: #ffffff;
+		border-radius: 20rpx;
+	}
+
+	.layer1 {
+		top: 300rpx;
+	}
+
+	.list {
+		width: 600rpx;
+		padding:10rpx 0 30rpx 0;
+		flex-wrap: wrap;
+		flex-direction: row;
+	}
+	.box {
+		width: 540rpx;
+		height: 500rpx;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.titleBox{
+		padding-top: 7rpx;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.title {
+		margin-top: 20rpx;
+		font-size:38rpx;
+		text-align: center;
+	}
+
+	.title2{
+		font-size:29rpx;
+		text-align: center;
+		color:#cdcdcd;
+		width: 540rpx;
+		line-height:38rpx;
+		margin: 0rpx auto;
+		margin-top: 15rpx;
+	}
+
+	.box-image {
+		width: 540rpx;
+		height: 470rpx;
+	}
+
+	.swiper-box {
+		width: 540rpx;
+		height: 470rpx;
+	}
+	.swiper-item {
+		/* #ifndef APP-NVUE */
+		width: 510rpx;
+		display: flex;
+		/* #endif */
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		color: #fff;
+		position: relative;
+	}
+
+	.h1Box {
+		height: 80rpx;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		border-top-width: 2rpx;
+		border-top-style: solid;
+		border-top-color: #e3e3e3;
+	}
+
+	.h1 {
+		font-size: 32rpx;
+	}
+</style>

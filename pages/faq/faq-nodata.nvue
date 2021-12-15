@@ -1,0 +1,39 @@
+<template>
+	<view class="no-data">
+		<image class="data-img" src="/static/img/search/nodata.png" mode=""></image>
+	</view>
+</template>
+
+<script>
+export default {
+	data() {
+		return {};
+	},
+	props: {
+		keyword: String,
+	},
+	methods: {
+	}
+};
+</script>
+
+<style scoped>
+.no-data {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.no-data .data-img {
+	width: 489rpx;
+	height: 451rpx;
+	margin-top: 136rpx;
+	margin-bottom: 32rpx;
+}
+.no-data .data-desc {
+	text-align: center;
+	font-size: 30rpx;
+	color: #999999;
+}
+</style>

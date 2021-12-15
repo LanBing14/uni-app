@@ -1,0 +1,408 @@
+<template>
+	<view class="idea-page">
+		<uni-nav-bar class="nav-topbar" @clickLeft="backClick" :fixed="false" color="#ffffff" background-color="#d51e1e" statusBar="true" left-icon="arrowleft">
+		   <view class="top-share" slot="right">
+			   <image class="share-img" src="../../static/img/share.png" mode=""></image>
+		   </view>
+		</uni-nav-bar>
+		<view class="idea-panel">
+			<view class="panel-top">
+				<image class="user-img" :src="userImgUrl(detailItem.headPicUrl)" mode=""></image>
+				<view class="user-info">
+					<text class="user-name">{{ detailItem.username }}</text>
+					<text class="user-time">{{ detailItem.publish_date | dateFormat('yyyy-MM-dd')}}</text>
+				</view>
+				<view class="user-tool">
+					<view class="tool-good">
+						<image class="good-img" src="/static/img/faq/ico2.png" mode=""></image>
+						<text class="good-count">{{ detailItem.replyCount }}</text>
+					</view>
+					<view class="tool-comment">
+						<image class="comment-img" src="/static/img/faq/ico1.png" mode=""></image>
+						<text class="good-count">{{ detailItem.likeCount.count || 0 }}</text>
+					</view>
+				</view>
+			</view>
+			<view class="panel-content">
+				<text class="content-title">
+					{{ detailItem.comment_content }}
+				</text>
+			</view>
+			<view class="panel-original">
+				<text class="original-link">查看原文</text>
+			</view>
+		</view>
+		<view class="comment-order">
+			<image class="order-img" src="/static/img/faq/time.png" mode=""></image>
+			<text class="order-desc">按时间</text>
+		</view>
+		<view class="comment-list">
+			<swiper class="tab-box">
+				<swiper-item>
+					<mescroll-uni ref="mescrollRef" @init="mescrollInit" :down="downOption" @down="downCallback" :up="upOption" @up="upCallback">
+						<uni-cell v-for="(item, index) in dataList" :key="index" v-if="dataList.length > 0">
+							  <view class="idea-panel">
+							  	<view class="panel-top">
+									<image class="user-img" :src="userImgUrl(item.headPicUrl)" mode=""></image>
+							  		<view class="user-info">
+							  			<text class="user-name">{{ item.username }}</text>
+										<text class="user-time">{{ item.publish_date | dateFormat('yyyy-MM-dd')}}</text>
+							  		</view>
+							  		<view class="user-tool">
+							  			<view class="tool-good" @click="likeUser(item)">
+							  				<image class="good-img" src="/static/img/faq/ico2.png" mode=""></image>
+							  				<text class="good-count">{{ item.likeCount.count || 0 }}</text>
+							  			</view>
+							  		</view>
+							  	</view>
+							  	<view class="panel-content comment-content pdT0">
+							  		<text class="content-title">
+							  			{{ item.reply_content }}
+							  		</text>
+							  	</view>
+							  </view>
+						</uni-cell>
+					
+						<view class="no-data" v-if="showNoData">
+							<text>暂无评论</text>
+						</view>
+					</mescroll-uni>
+				</swiper-item>
+			</swiper>
+		</view>
+	
+		<comment-tool v-model="commentValue" @cclick="commentClick" :option="toolOption"></comment-tool>
+	</view>
+</template>
+
+<script>
+	import MescrollMixin from '@/components/mescroll-uni/mescroll-mixins.js';
+	import MescrollMoreItemMixin from '@/components/mescroll-uni/mixins/mescroll-more-item.js';
+	import uniCell from '@/components/uni-cell.vue';
+	import uniNavBar from '@/components/uni-nav-bar/uni-nav-bar.vue'
+	import CommentTool from '@/pages/yd-comment-tool/comment-tool.nvue';
+	import {
+		Api_GetComment,
+		Api_GetCommentSave,
+		Api_GetLikeSave,
+		Api_GetReplyPage
+	} from '@/api/faq.js';
+	import {dateFormat} from '@/utils/index.js'
+	export default {
+		mixins: [MescrollMixin, MescrollMoreItemMixin], // 注意此处还需使用MescrollMoreItemMixin (必须写在MescrollMixin后面)
+		filters:{
+			dateFormat
+		},
+		components: {
+			uniCell,
+			CommentTool,
+		},
+		data() {
+			return {
+				downOption: {
+					auto: true,
+					textInOffset: '下拉刷新',
+					textOutOffset: '释放更新',
+					textLoading: '加载中 ...'
+				},
+				upOption: {
+					auto: true,
+					textLoading: '加载中 ...',
+					textNoMore: '-- 没数据了 --',
+					toTop: {
+						src: "../../static/img/search/top.png", // 图片路径
+						width: '95rpx',
+					},
+					page: {
+						num: 0, 
+						size: 10
+					},
+					empty: { use: false }
+				},
+				showNoData: false,
+				dataList: [],
+				currentPage: 1,
+				totalPageNumber: 0,
+				toolOption:{
+					placeholder: '听君一席话，胜读十年书',
+					like:true,
+					commentCount: 0,
+					likeCount: 0
+				},
+				item:{},
+				detailItem: {
+					likeCount:{
+						count:0,
+						isLike:"0"
+					}
+				},
+				businessId:'',
+				isLikeIdea:true,
+				curComItem:{},
+				commentValue:''
+			}
+		},
+		onLoad: function (option) {
+			console.log(option)
+			this.businessId = 'd743bc77-4e78-47ce-804e-58d2d3d5d72c'//option.id;
+			this.loadComment();
+		},
+		methods: {
+			backClick(){
+				uni.navigateBack({
+				    delta: 1
+				});
+			},
+			userImgUrl(url){
+				return url ? url : '/static/img/demo1.png';
+			},
+			loadComment(){
+				Api_GetComment({
+					id:this.businessId
+				}).then(res =>{
+					if(res.statusCode === 1){
+						this.detailItem = res.data;
+					}
+				});
+			},
+			loadListData() {
+				// uni.showLoading();
+				Api_GetReplyPage({
+					businessId: this.businessId,
+					currentPage: this.currentPage,
+					pageSize:10,
+					asc:true
+				}).then(curPageData => {
+					let list = curPageData.data.data;
+					// uni.hideLoading();
+					if (this.currentPage === 1) {
+						this.dataList = [];
+					} 
+			
+					// this.totalPageNumber = curPageData.totalPageNumber;
+					this.dataList = this.dataList.concat(list);
+					
+					this.showNoData = !this.dataList.length;
+					// 数据渲染完毕再隐藏加载状态
+					this.$nextTick(() => {
+						this.mescroll.endSuccess(list.length);
+					});
+				})
+				.catch(() => {
+					uni.hideLoading();
+					this.mescroll.endErr();
+				});
+			},
+			/*下拉刷新的回调 */
+			downCallback() {
+				this.mescroll.resetUpScroll();
+			},
+			/*上拉加载的回调 */
+			upCallback(page) {
+				this.currentPage = page.num
+				this.loadListData();
+			}, 
+			commentClick(){
+				if(this.commentValue === ''){
+					uni.showToast({
+					    icon: 'none',
+					    title: '请输入评论内容',
+					    duration: 2000
+					});
+					return false;
+				}
+				const _self = this;
+				Api_GetCommentSave({
+					businessId: _self.detailItem.id, //业务表主键(关联各业务表id) ,
+					businessType:3, 
+					businessUserId:_self.detailItem.userId, //业务表创建的用户id（type = 1 的时候必填） ,
+					commentContent: _self.commentValue,//评论内容 ,
+					type:1,
+				}).then(res =>{
+					if(res.statusCode === 1){
+						_self.commentValue = '';
+						_self.loadIdea();
+					} else if (res.statusCode === 3) {
+						uni.showToast({
+							icon:'none',
+							title: res.message,
+							duration: 2000
+						});
+					}
+				}) 
+			},
+			likeClick(){
+				Api_GetLikeSave({
+					businessId:this.businessId,
+					businessType:3, 
+				}).then(res =>{
+					if(res.statusCode === 1){
+						_self.loadIdea();
+					}
+				})
+			},
+			likeUser(comitem){
+				Api_GetLikeSave({
+					businessId:comitem.id,
+					businessType:3, 
+				}).then(res =>{
+					if(res.statusCode === 1){
+						_self.loadIdea();
+					}
+				})
+			},
+		},
+	}
+</script>
+
+<style scoped>
+	.pdT0{
+		padding-top: 0!important;
+	}
+	.idea-page{
+		height: 100vh;
+		/* #ifndef APP-NVUE */
+		display: flex;
+		/* #endif */
+		flex-direction: column;
+		align-items: stretch;	
+		justify-content: flex-start;
+	}
+	.comment-list{
+		flex: 1;
+		/* #ifndef APP-NVUE */
+		display: flex;
+		/* #endif */
+		flex-direction: column;
+		align-items: stretch;	
+		justify-content: flex-start;
+		background-color: #f7f7f7;
+	}
+	.space-line {
+		background-color: #f7f7f7;
+		height: 20rpx;
+		margin-top: 40rpx;
+	}
+	.top-share{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.panel-top{
+		display: flex;
+		flex-direction: row;
+		align-items: center;	
+		justify-content: flex-start;
+		padding: 24rpx 20rpx 0 20rpx;
+	}
+	.user-info{
+		/* #ifndef APP-NVUE */
+		display: flex;
+		/* #endif */
+		flex-direction: column;
+	}
+	.user-img{
+		width: 64rpx;
+		height: 64rpx;
+		margin-right: 16rpx;
+		border-radius: 200rpx;
+	}
+	.user-name{
+		color: #000000;
+		line-height: 1.4;
+		font-size: 26rpx;
+		lines: 1;
+		text-overflow: ellipsis;
+		width: 500rpx;
+	}
+	.user-time{
+		color: #999999;
+		font-size: 24rpx;
+	}
+	.share-img{
+		width: 38rpx;
+		height: 39rpx;
+	}
+	.user-tool{
+		flex: 1;
+		display: flex;
+		flex-direction: row;
+		align-items: center;	
+		justify-content: flex-end;
+	}
+	.tool-good,.tool-comment{
+		display: flex;
+		flex-direction: row;
+		align-items: center;	
+	}
+	.good-img,.comment-img{
+		width: 26rpx;
+		height: 24rpx;
+		margin-right: 10rpx;
+		margin-left: 38rpx;
+	}
+	.good-count{
+		font-size: 24rpx;
+		color: #999999;
+	}
+	.panel-content{
+		padding: 16rpx 20rpx 10rpx;
+	}
+	.content-title{
+		font-size: 26rpx;
+		color: #262626;
+		overflow: hidden;
+		text-overflow: -o-ellipsis-lastline;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+	}
+	.original-link{
+		font-size: 26rpx;
+		color: #262626;
+		padding: 0 20rpx;
+	}
+	.comment-order{
+		display: flex;
+		margin-top: 20rpx;
+		padding: 20rpx 20rpx;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+		background-color: #f7f7f7;
+		border-bottom-color: #e2e2e2;
+		border-bottom-width: 1px;
+	}
+	.order-img{
+		width: 23rpx;
+		height: 23rpx;
+		margin-right: 10rpx;
+	}
+	.order-desc{
+		 font-size: 22rpx;
+		 color: #ce0201;
+	}
+	
+	.comment-content {
+		padding-left: 0;
+		padding-bottom: 18rpx;
+		margin-left: 100rpx;
+		border-bottom-color: #e2e2e2;
+		border-bottom-width: 1px;
+	}
+	.panel-img-list{
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+	.list-img{
+		width: 243rpx;
+		height: 162rpx;
+	}
+	.tab-box{
+		flex:1;
+	}
+</style>

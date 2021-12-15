@@ -1,0 +1,698 @@
+<template>
+	<scroll-view ref="specialpage" id="specialPage" class="special-panel" :scroll-y="bottomStatus" :show-scrollbar="true">
+		<view class="center">
+			<view @touchstart.prevent="topClick" ref="specialtop" class="zj-top">
+				<image class="zj-bg" src="/static/img/specialist/bg.png"></image>
+				<view class="zj-top-box">
+					<user-focus :userFocus='userInfo'></user-focus>
+				</view>
+			</view>
+			<view @touchstart.prevent="topClick" ref="specialcenter" class="zj-con flex-col">
+				<!-- 专家简介 -->
+				<view>
+					<text style="font-size: 36rpx;">专家简介</text>
+				</view>
+
+				<view class="intro-box flex-col">
+					<view v-for="(item, index) in introList" :key="index">
+						<view v-if="(index < introIndex) && null != item.catalog && '' !== item.catalog" class="desc-title">
+							<text class="desc-cor"></text>
+							<text class="desc-catalog">{{ item.catalog }}</text>
+						</view>
+						<view v-if="index < introIndex">
+							<text class="desc-content">{{ item.content }}</text>
+						</view>
+						
+						<!-- <text style="font-size: 33rpx;" v-if="(index < introIndex) && null != item.catalog && '' !== item.catalog">{{ item.catalog }}</text> -->
+						<!-- <text style="font-size: 28rpx;" v-if="index < introIndex">{{ item.content }}</text> -->
+					</view>
+				</view>
+
+				<!-- 显示更多 -->
+				 <view class="more-btn" v-if="showStatus">
+					<view class="btn-left" @click="switchBox">
+						<image :src="expandStatus ? '/static/img/specialist/less.png' : '/static/img/specialist/more.png'" mode="aspectFill" class="btn-img"></image>
+					</view>
+					<text class="btn-txt" v-if="!expandStatus" @click="switchBox">展开全部</text>
+					<text class="btn-txt" v-if="expandStatus" @click="switchBox">收起全部</text>
+				</view>
+			</view>
+
+				<view ref="specialbottom" id="zj-tab" class="zj-tab flex-col" :class="{'fixed': tabFix}">
+					<!-- 顶部选项卡 -->
+					<view id="nav-bar" class="nav-bar">
+						<view class="nav-box">
+							<view
+								v-for="(item,index) in tabBars" :key="index"
+								class="nav-item"
+								@click="changeTab(index)"
+								:id="tabBars.mid"
+							>
+								<view style="position: relative;">
+									<text class="txt"
+									:class="tabCurrentIndex === index? 'current' : ''">{{item.name}} {{item.total?'('+ item.total+')':''}}</text>
+									<image v-if="tabCurrentIndex === index" src="/static/img/topic/line2.png" mode="aspectFill" class="line2"></image>
+								</view>
+							</view>
+							<!-- <image src="/static/img/topic/line2.png" mode="aspectFill" class="line2" :style="{left: lineLeft + 'px'}"></image> -->
+						</view>
+						<view>
+							<image src="/static/img/topic/ico-search.png" mode="aspectFill" style="width: 32rpx; height: 32rpx; margin-right: 20px;" @click="goDetail('/pages/search/search')"></image>
+						</view>
+					</view>
+
+					<swiper class="swiper-box" ref="swiper1" style="flex: 1;" disable-touch='false' :current="tabCurrentIndex" @change="changeTab">
+						<swiper-item class="swiper-item">
+							<list @loadmore="loadMore0">
+								<cell class="hot" v-if="articleList.length>0">
+									<text class="hot-txt" @click="order0Change('publishDate')" :class="{'check' : sort0 === 'publishDate'}">最新</text>
+									<text style="padding: 0 10rpx;"> / </text>
+									<text class="hot-txt" @click="order0Change('')" :class="{'check' : sort0 === ''}">最热</text></cell>
+								<cell v-for="(item, index) in articleList" :key="index" v-if="articleList.length>0">
+									<list-item :listItem="item" :tabIndex="0"></list-item>
+								</cell>
+								<cell v-if="articleList.length == 0">
+									<uni-no-data></uni-no-data>
+								</cell>
+
+								<cell class="loading-more" v-if="tabBars[0].total > 10">
+									<text class="loading-more-text">{{articleLoadingText}}</text>
+								</cell>
+							</list>
+						</swiper-item>
+
+						<swiper-item class="swiper-item">
+							<list @loadmore="loadMore1" v-if="tabCurrentIndex === 1">
+								<cell class="hot" v-if="opusesList.length>0">
+									<text class="hot-txt" @click="order1Change('publishDate')" :class="{'check' : sort1 === 'publishDate'}">最新</text>
+									<text style="padding: 0 10rpx;"> / </text>
+									<text class="hot-txt" @click="order1Change('')" :class="{'check' : sort1 === ''}">最热</text></cell>
+								<cell v-for="(item, index) in opusesList" :key="index" v-if="opusesList.length>0">
+									<list-item :listItem="item" :tabIndex="1"></list-item>
+								</cell>
+								<cell v-if="opusesList.length == 0">
+									<uni-no-data></uni-no-data>
+								</cell>
+
+								<cell class="loading-more" v-if="tabBars[1].total > 10">
+									<text class="loading-more-text">{{opusesLoadingText}}</text>
+								</cell>
+							</list>
+						</swiper-item>
+
+						<swiper-item class="swiper-item">
+							<list @loadmore="loadMore2" v-if="tabCurrentIndex === 2">
+								<cell class="hot" v-if="userAnswerList.length>0">
+									<text class="hot-txt" @click="order2Change('publishDate')" :class="{'check' : sort2 === 'publishDate'}">最新</text>
+									<text style="padding: 0 10rpx;"> / </text>
+									<text class="hot-txt" @click="order2Change('')" :class="{'check' : sort2 === ''}">最热</text></cell>
+								<cell v-for="(item, index) in userAnswerList" :key="index" v-if="userAnswerList.length>0">
+									<list-item :listItem="item" :tabIndex="2"></list-item>
+								</cell>
+								<cell v-if="userAnswerList.length == 0">
+									<uni-no-data></uni-no-data>
+								</cell>
+
+								<cell class="loading-more" v-if="tabBars[2].total > 10">
+									<text class="loading-more-text">{{userAnswerLoadingText}}</text>
+								</cell>
+							</list>
+						</swiper-item>
+					</swiper>
+
+				</view>
+
+			<share-box ref='change' :info="obj"></share-box>
+		</view>
+	</scroll-view>
+</template>
+
+<script>
+	import {
+		Api_GoDetail,
+		Api_GetOpusesList } from '@/api/topic.js';
+	import { Api_GetArticleList } from '@/api/topic.js';
+	import { Api_GetUserAnswerList } from '@/api/faq.js';
+    import {parseHtml} from '@/common/js/html-parser.js';
+
+    import userFocus from './user-focus.nvue';
+	import listItem from './list.nvue';
+
+	import mixLoading from '@/components/mix-loading/mix-loading.vue';
+	import shareBox from '@/components/share.nvue';
+
+	// #ifdef APP-PLUS
+	const dom = weex.requireModule('dom');
+	// #endif
+
+	export default {
+		components: {
+			userFocus,
+			listItem,
+			mixLoading,
+			shareBox
+		},
+		data() {
+			return {
+				introList: [],
+				introIndex: 1,
+				articleLoadingText: '加载更多...',
+				opusesLoadingText: '加载更多...',
+				userAnswerLoadingText: '加载更多...',
+				sort0: 'publishDate',
+				sort1: 'publishDate',
+				sort2: 'publishDate',
+				hot1: true,
+				hot2: true,
+				userAnswerList: [],
+				opusesList: [],
+				articleList: [],
+				tabCurrentIndex: 0,
+				id: '',
+				login: false,
+				avatarUrl: '/static/img/demo1.png',
+				userInfo: {},
+				introShort: '',
+				tabBars: [{
+					name: '文章',
+					total: 0,
+					mid: 'B01'
+				},{
+					name: '著作',
+					total: 0,
+					mid: 'B02'
+				},{
+					name: '回答',
+					total: 0,
+					mid: 'B03'
+				}],
+				lineLeft: 40,
+				current: 0,
+				userId: '',
+				tabFix: false,
+				pageParams0: {
+					currentPage: 1,
+					totalPageNumber: 1
+				},
+				pageParams1: {
+					currentPage: 1,
+					totalPageNumber: 1
+				},
+				pageParams2: {
+					currentPage: 1,
+					totalPageNumber: 1
+				},
+				obj: {},
+				loading: true,
+				showStatus: false,
+				expandStatus: false,
+
+				bottomStatus: true,
+				scrollTop:0,
+				scrollCha:0,
+				// 屏幕高度
+				screenHeight:0,
+				// 页面高度
+				pageHeight:0,
+				pageTop:0,
+				pageCenter:0,
+				pageBottom:0,
+			}
+		},
+		watch:{
+			userId: function (val){
+				return this.userId = val;
+			}
+		},
+		onLoad(options){
+			this.id = options.expertId;
+			let _self = this;
+			uni.getSystemInfo({
+				success: function (res) {
+					_self.screenHeight = res.screenHeight;
+				}
+			});
+			this.getDetailInfo();
+		},
+		onNavigationBarButtonTap(e) {
+			this.$refs.change.share();
+		},
+		onPageScroll(e) {
+			// 距离顶部距离
+			this.scrollTop = e.scrollTop;
+			this.pageHeight = Math.round(this.pageTop + this.pageCenter + this.pageBottom)
+			this.scrollCha = Math.round(this.pageHeight - e.scrollTop)
+			this.bottomStatus = ( this.scrollCha > this.screenHeight);
+		},
+		mounted(){
+			// 这个页面高度
+			dom.getComponentRect(this.$refs.specialtop, option => {
+				this.pageTop = option.size.height
+			})
+			dom.getComponentRect(this.$refs.specialcenter, option => {
+				this.pageCenter = option.size.height
+			})
+			dom.getComponentRect(this.$refs.specialbottom, option => {
+				this.pageBottom = option.size.height
+			})
+
+			// 重新计算滚动差
+			this.pageHeight = Math.round(this.pageTop + this.pageCenter + this.pageBottom)
+			this.bottomStatus = Math.round( this.pageHeight > this.screenHeight);
+		},
+		updated(){
+			const _self = this;
+			dom.getComponentRect(_self.$refs.specialcenter, option => {
+				_self.pageCenter = option.size.height;
+				// 重新计算滚动差
+				_self.pageHeight = Math.round(_self.pageTop + _self.pageCenter + _self.pageBottom)
+				_self.scrollCha = Math.round(_self.pageHeight - _self.scrollTop)
+				// _self.bottomStatus = ( _self.scrollCha > _self.screenHeight);
+			})
+		},
+		methods: {
+			topClick(){
+				this.bottomStatus = true;
+			},
+			centerClick(){
+				this.bottomStatus = true;
+			},
+			loadMore0(){
+				if(this.pageParams0.currentPage < this.pageParams0.totalPageNumber){
+					this.pageParams0.currentPage = this.pageParams0.currentPage + 1;
+					setTimeout(() => {
+					    this.getArticleList();
+					}, 500)
+				}
+			},
+			loadMore1(){
+				if(this.pageParams1.currentPage < this.pageParams1.totalPageNumber){
+					this.pageParams1.currentPage = this.pageParams1.currentPage + 1;
+					setTimeout(() => {
+					    this.getOpusesList();
+					}, 500)
+				}
+			},
+			loadMore2(){
+				if(this.pageParams2.currentPage < this.pageParams2.totalPageNumber){
+					this.pageParams2.currentPage = this.pageParams2.currentPage + 1;
+					setTimeout(() => {
+					    this.getUserAnswerList();
+					}, 500)
+				}
+			},
+			order0Change(sortKey){
+				this.sort0 = sortKey;
+				this.getArticleList();
+			},
+			order1Change(sortKey){
+				this.sort1 = sortKey;
+				this.getOpusesList();
+			},
+			order2Change(sortKey){
+				this.sort2 = sortKey;
+				this.getUserAnswerList();
+			},
+			getTabbarItemsSize(){
+				// #ifdef APP-NVUE
+				dom.getComponentRect(this.$refs['swiper1'], res => {
+					this.swiperWidth = res.size.width;
+				});
+				for (var i = 0; i < this.tabList.length; i++) {
+					this.getElementSize(dom, this.$refs['tabitem' + i][0], i);
+				}
+				// #endif
+
+				uni.createSelectorQuery().in(this).select('.swiper-box').fields({
+					dataset: true,
+					size: true,
+				}, (res) => {
+					this.swiperWidth = res.width;
+				}).exec();
+			},
+			changeTab(e){
+				if(typeof e === 'object'){
+					this.tabCurrentIndex = e.detail.current;
+				} else {
+					this.tabCurrentIndex = e;
+				}
+				this.lineLeft = 40 + 110 * this.tabCurrentIndex;
+			},
+			getDetailInfo(){
+				Api_GoDetail(this.id).then(res=>{
+					if(res.statusCode === 1 && res.data){
+						uni.setNavigationBarTitle({
+						    title: res.data.expertName
+						});
+						this.userInfo = res.data;
+						try {
+							// 显示展开全部
+							this.showStatus = res.data.contentVoList.length > 1;
+							this.introList = res.data.contentVoList;
+							this.introShort = this.introList[0].content;
+							if (this.introShort.length > 200) {
+								this.showStatus = true;
+								this.introList[0].content = this.introList[0].content.substring(0, 200) + "...";
+							}
+						} catch (e) {
+							console.error(e);
+						}
+
+						this.userId = res.data.userId;
+
+						this.obj = {
+							title: '向你推荐了',
+							summary: this.userInfo.expertName + '  ' + this.userInfo.expertTitle,
+							imageUrl: this.userInfo.headPicUrl,
+							href: '/pages/specialist/specialist&expertId=' + this.id,
+							// businessId: this.id,
+							type: 4 // 分享类型  0:资讯 1:专栏文章 2:信用百科 3:著作 6:专家 4:提问 5:回答 7:想法'
+						};
+
+						this.getArticleList(res.data.userId);
+						this.getOpusesList();
+						this.getUserAnswerList();
+					}
+				})
+			},
+			parseIntro(intro) {
+                // 替换无法rich-text组件无法识别的标识 “”
+                while (intro.indexOf('&rdquo;') >= 0) {
+                    intro = intro.replace('&rdquo;', '“');
+                }
+                while (intro.indexOf('&ldquo;') >= 0) {
+                    intro = intro.replace('&ldquo;', '”');
+                }
+                while (intro.indexOf('&#39;') >= 0) {
+                    intro = intro.replace('&#39;', "'");
+                }
+                return parseHtml(intro);
+			},
+			switchBox() {
+				if (this.expandStatus) {
+					if (this.introShort.length > 200) {
+						this.introList[0].content = this.introShort.substring(0, 200) + "...";
+					}
+					this.introIndex = 1;
+				} else {
+					this.introList[0].content = this.introShort;
+					this.introIndex = this.introList.length;
+				}
+				this.expandStatus = !this.expandStatus;
+			},
+			getArticleList(){
+				Api_GetArticleList({
+					category: "B01",
+					expertUserId: this.userId,
+					orderProperty: this.sort0,
+					currentPage: this.pageParams0.currentPage,
+					pageSize: 10
+				}).then(res=>{
+					if(res.statusCode === 1 && res.data){
+						if(this.pageParams0.currentPage <= 1){
+							this.articleList = res.data.data;
+							this.tabBars[0].total = res.data.totalRecordNumber;
+							this.pageParams0.totalPageNumber = res.data.totalPageNumber;
+						} else {
+							this.articleList = this.articleList.concat(res.data.data);
+							if(this.tabBars[0].total == this.articleList.length) {
+								this.articleLoadingText = "暂无更多";
+							}
+						}
+					}
+				})
+			},
+			getOpusesList(){
+				Api_GetOpusesList({
+					expertUserId: this.userId,
+					orderProperty: this.sort1,
+					currentPage: this.pageParams1.currentPage,
+					pageSize: 10
+				}).then(res=>{
+					if(res.statusCode === 1 && res.data){
+						if(this.pageParams1.currentPage <= 1){
+							this.opusesList = res.data.data;
+							this.tabBars[1].total = res.data.totalRecordNumber;
+							this.pageParams1.totalPageNumber = res.data.totalPageNumber;
+						} else {
+							this.opusesList = this.opusesList.concat(res.data.data);
+							if(this.tabBars[1].total == this.opusesList.length) {
+								this.opusesLoadingText = "暂无更多";
+							}
+						}
+					}
+				})
+			},
+			getUserAnswerList(){
+				Api_GetUserAnswerList({
+					userId: this.userId,
+					orderProperty: this.sort2,
+					currentPage: this.pageParams2.currentPage,
+					pageSize: 10
+				}).then(res=>{
+					if(res.statusCode === 1 && res.data){
+						if(this.pageParams2.currentPage <= 1){
+							this.userAnswerList = res.data.data;
+							this.tabBars[2].total = res.data.totalRecordNumber;
+							this.pageParams2.totalPageNumber = res.data.totalPageNumber;
+						} else {
+							this.userAnswerList = this.userAnswerList.concat(res.data.data);
+							if(this.tabBars[2].total == this.userAnswerList.length) {
+								this.userAnswerLoadingText = "暂无更多";
+							}
+						}
+					}
+				})
+			},
+			goLogin() {
+				if (!this.login) {
+					console.log('点击前往登录');
+					uni.navigateTo({
+						url: '../login/login'
+					});
+				}
+			},
+			goDetail(link) {
+				uni.navigateTo({
+					url: link + "?id=" + this.id
+				});
+			}
+		}
+	}
+</script>
+
+<style>
+	/* #ifndef APP-PLUS */
+	page {
+		width: 100%;
+		min-height: 100%;
+		display: flex;
+	}
+	/* #endif */
+	.special-panel{
+		flex: 1;
+		background-color: #ffffff;
+	}
+	.center {
+		background-color: #ffffff;
+	}
+	.zj-top {
+		position: relative;
+		width: 750rpx;
+		height: 351rpx;
+	}
+	.zj-bg {
+		position: absolute;
+		width: 750rpx;
+		height: 351rpx;
+	}
+	.zj-top-box {
+	/* 	position: absolute;
+		bottom: 50rpx;
+		left: 20rpx; */
+	}
+	.zj-con {
+		padding: 30rpx 20rpx;
+		background-color: #fff;
+		border-bottom-width: 20rpx;
+		border-bottom-color: #f7f7f7;;
+		border-bottom-style: solid;
+	}
+	.list {
+		color: #555555;
+		font-size: 30rpx;
+	}
+	.dot {
+		width: 7rpx;
+		height: 7rpx;
+		margin-right: 14rpx;
+	}
+	.more-btn {
+		flex-direction: row;
+		justify-content: flex-end;
+		margin-right: 20rpx;
+	}
+	.btn-left {
+		width: 42rpx;
+		height: 40rpx;
+		background-color: #f0f0f0;
+		border-top-left-radius: 15rpx;
+		border-bottom-left-radius: 15rpx;
+		text-align: center;
+		align-items: center;
+		justify-content: center;
+	}
+	.btn-img {
+		width: 24rpx;
+		height: 25rpx;
+	}
+	.btn-txt {
+		width: 96rpx;
+		height: 40rpx;
+		font-size: 20rpx;
+		padding-top: 8rpx;
+		color: #a1a1a1;
+		background-color: #f7f7f7;
+		border-top-right-radius: 15rpx;
+		border-bottom-right-radius: 15rpx;
+	}
+	.zj-tab {
+		flex: 1;
+		flex-direction: column;
+		overflow: hidden;
+		background-color: #ffffff;
+		/* #ifdef MP-ALIPAY || MP-BAIDU */
+		height: 100vh;
+		/* #endif */
+	}
+	.nav-bar {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		padding-top: 30rpx;
+		padding-bottom: 20rpx;
+		height: 80rpx;
+		line-height: 80rpx;
+	}
+	.nav-box {
+		position: relative;
+		flex: 1;
+		flex-direction: row;
+	}
+	.nav-item {
+		flex: 1;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		padding-bottom: 10rpx;
+	}
+	.txt {
+		flex: 1;
+		text-align: center;
+		font-size: 30rpx;
+		color: #949494;
+	}
+	.current {
+		font-size: 36rpx;
+		color: #000;
+		padding-bottom: 12rpx;
+	}
+	.line2 {
+		width: 48rpx;
+		height: 6rpx;
+		position: absolute;
+		bottom: 0;
+		left: 10rpx;
+		transition-duration: 0.2s;
+		transition-property: left;
+	}
+	.swiper-box {
+		flex: 1;
+		height: 750rpx;
+	}
+	.swiper-item {
+	    flex: 1;
+	    flex-direction: row;
+	}
+	.fixed {
+		position: absolute;
+		top: 88rpx;
+		width: 750rpx;
+	}
+	.hot {
+		width: 750rpx;
+		flex-direction: row;
+		padding: 20rpx;
+		height: 80rpx;
+		line-height: 80rpx;
+		align-items: center;
+		justify-content: flex-start;
+		color: #5d5d5d;
+	}
+	.hot-txt {
+		color: #5d5d5d;
+		font-size: 30rpx;
+	}
+	.check {
+		color: #ce0201;
+	}
+	.loading-icon {
+		width: 20px;
+		height: 20px;
+		margin-right: 5px;
+		color: #999999;
+	}
+	.loading-text {
+	    margin-left: 2px;
+	    font-size: 16px;
+	    color: #999999;
+	}
+	.loading-more {
+	    align-items: center;
+	    justify-content: center;
+	    padding-top: 10px;
+	    padding-bottom: 10px;
+	    text-align: center;
+	}
+	.loading-more-text {
+	    font-size: 28rpx;
+	    color: #999;
+	}
+	.intro-title {
+		font-size: 25rpx;
+	}
+	.intro-content {
+		font-size: 20rpx;
+	}
+	
+	.intro-box{
+		/* height: 235rpx; */
+	}
+	
+	.desc-title{
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		flex-direction: row;
+		margin-top: 20rpx;
+	}
+	
+	.desc-cor{
+		width: 6rpx;
+		height: 6rpx;
+		background-color: #CE0201;
+		margin-right: 10rpx;
+	}
+	
+	.desc-catalog{
+		font-size: 34rpx;
+		font-weight: bottom;
+	}
+	
+	.desc-content{
+		margin-top: 20rpx;
+		font-size: 28rpx;
+		font-weight: normal;
+		color: #787878;
+	}
+</style>

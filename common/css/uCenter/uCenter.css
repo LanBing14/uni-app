@@ -1,0 +1,93 @@
+/* #ifndef APP-PLUS-NVUE */
+@font-face {
+	font-family: texticons;
+	font-weight: normal;
+	font-style: normal;
+	src: url("~@/static/fonts/text-icon.ttf") format("truetype");
+}
+
+/* #endif*/
+
+/* 解决头条小程序字体图标不显示问题，因为头条运行时自动插入了span标签，且有全局字体 */
+/* #ifdef MP-TOUTIAO */
+text :not(view) {
+	font-family: texticons;
+}
+
+/* #endif */
+
+.center {
+	height: 100vh;
+	flex: 1;
+	flex-direction: column;
+	background-color: #f8f8f8;
+	align-items: center;
+}
+
+.center-list {
+	flex-direction: column;
+	background-color: #ffffff;
+	margin-top: 20rpx;
+	width: 750rpx;
+}
+
+.center-list-item {
+	height: 90rpx;
+	width: 750rpx;
+	/* #ifndef APP-NVUE */
+	box-sizing: border-box;
+	display: flex;
+	/* #endif */
+	flex-direction: row;
+	padding: 0rpx 20rpx;
+}
+
+.list-icon {
+	width: 40rpx;
+	height: 90rpx;
+	line-height: 90rpx;
+	font-size: 34rpx;
+	color: #2f85fc;
+	text-align: center;
+	font-family: texticons;
+	margin-right: 20rpx;
+}
+
+.list-icon-img {
+	width: 34rpx;
+	height: 90rpx;
+	line-height: 90rpx;
+	margin-right: 20rpx;
+	justify-content: center;
+}
+
+.list-img {
+	width: 34rpx;
+	height: 34rpx;
+}
+
+.list-text {
+	height: 90rpx;
+	line-height: 90rpx;
+	font-size: 30rpx;
+	color: #000;
+	flex: 1;
+	min-width: 100rpx;
+}
+
+.navigat-arrow {
+	height: 90rpx;
+	width: 40rpx;
+	line-height: 90rpx;
+	font-size: 34rpx;
+	color: #bdbdbd;
+	text-align: right;
+	font-family: texticons;
+	align-items: center;
+	justify-content: center;
+}
+
+.uni-icons {
+	align-items: center;
+	color: #bdbdbd;
+}

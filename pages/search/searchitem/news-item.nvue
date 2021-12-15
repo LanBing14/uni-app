@@ -1,0 +1,111 @@
+<template>
+	<view class="news-panel">
+		<view class="news-item view" @click="itemClick(value.id)">
+			<view class="news-info-box">
+				<rich-text class="news-title" :nodes="html2text(value.title)"></rich-text>
+				<rich-text class="news-desc" :nodes="html2text(value.content)"></rich-text>
+				<view class="news-info">
+					<text class="info-time">{{ value.publishDate | dateFormat }}</text>
+				</view>
+			</view>
+			<image v-if="value.titleUrl" :fade-show="false" class="news-image" :src="newImgUrl(value.titleUrl)" mode="aspectFill"></image>
+		</view>
+		<view class="space-line"></view>
+	</view>
+</template>
+
+<script>
+	import { parseHtml } from '@/common/js/html-parser.js'
+
+	export default {
+		filters:{
+			dateFormat: function(val) {
+			    if (val && val.length > 10) {
+					return val.substring(0, 10);
+				}
+			}
+		},
+		data() {
+			return {
+			};
+		},
+		props: {
+			value: {
+				type: Object,
+				default: function(){
+					return {}
+				}
+			}
+		},
+		methods: {
+			newImgUrl(url){
+				return url?url:'/static/img/demo2.png';
+			},
+			html2text(html){
+				return html ? parseHtml(html) : '' ;
+			},
+            itemClick(id) {
+                uni.navigateTo({url: '/pages/details/details?id=' + id});
+            }
+		}
+	};
+</script>
+
+<style scoped>
+.news-panel{
+	display: flex;
+	flex-direction: column;
+	background-color: #ffffff;
+}
+.space-line {
+	background-color: #f7f7f7;
+	height: 20rpx;
+	width: 750rpx;
+}
+.news-item {
+	flex: 1;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+.news-info-box {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	margin: 20rpx;
+}
+.news-title {
+	lines: 1;
+	font-size: 32rpx;
+	line-height: 44rpx;
+	color: #000000;
+	text-overflow: ellipsis;
+	margin-bottom: 20rpx;
+}
+.news-desc {
+	lines: 2;
+	font-size: 26rpx;
+	line-height: 38rpx;
+	color: #787878;
+	text-overflow: ellipsis;
+	margin-bottom: 10rpx;
+	background-color: #ffffff;
+}
+.news-info {
+	lines: 1;
+	flex-direction: row;
+	align-items: center;
+	text-overflow: ellipsis;
+}
+.info-time {
+	color: #999999;
+	font-size: 24rpx;
+}
+.news-image {
+	width: 164rpx;
+	height: 164rpx;
+	border-radius: 6rpx;
+	overflow: hidden;
+	margin-right: 20rpx;
+}
+</style>

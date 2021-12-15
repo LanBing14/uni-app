@@ -1,0 +1,350 @@
+<template>
+	<view>
+		<view class="scrollbar">
+			<uni-swipe-action>
+			<view v-for="(item, index) in itemList2" :key="index">
+					<uni-swipe-action-item :options="options" @click="cancelAttention(item.id, index)">
+						<view class="list-item">
+							<view class="media-item view" v-if="item" @click="goDetail(item.id, index)">
+								<view class="view">
+									<view class="media-info-box flex-col" style="width: 587rpx;">
+										<text class="media-title" v-if="item.issueTitle">{{item.issueTitle}}</text>
+										<view v-if="item.answerVos">
+											<view class="flex-row" style="align-items: center; margin-top: 20rpx;">
+												<image :src="item.answerVos[0].headPicUrl? item.answerVos[0].headPicUrl: imgUrl" mode="aspectFill" class="head-img"></image>
+												<view>
+													<text class="username">{{item.answerVos[0].username}}</text>
+													<text class="nickname">{{item.answerVos[0].publishDate | getLocalTime}}</text>
+												</view>
+											</view>
+											<view class="flex-row" style="align-items: center;">
+											<text class="media-con">{{item.answerVos[0].answerContent}}</text>
+											</view>
+											<view v-if="item.img">
+												<view class="flex-row img-row" style="justify-content: space-between;" v-for="(i,index) in item.img" :key="index">
+													<image :src="i.url" mode="aspectFill" class="img"></image>
+												</view>
+											</view>
+
+											<view class="media-foot flex-row">
+												<view class="media-info flex-row">
+													<text class="info-text">{{item.answerVos[0].likeCount}}赞同 · </text>
+													<text class="info-text">{{item.answerVos[0].commentCount}}条评论</text>
+												</view>
+											</view>
+										</view>
+										<view v-if="!item.answerVos">
+											<text class="media-con">尚未有人回答</text>
+										</view>
+									</view>
+								</view>
+							</view>
+						</view>
+					</uni-swipe-action-item>
+					<view class="space-line"></view>
+			</view>
+			</uni-swipe-action>
+		</view>
+	</view>
+</template>
+
+<script>
+    import uniSwipeAction from '@/components/uni-swipe-action/uni-swipe-action.vue'
+    import uniSwipeActionItem from '@/components/uni-swipe-action-item/uni-swipe-action-item.vue'
+    import item from '@/components/user-focus.nvue';
+    import {
+        Api_GetAttentionAdd
+    } from '@/api/faq.js';
+	import {getLocalTime } from '@/common/js/util.js';
+	
+	export default {
+        props: {
+            itemList2: {
+                type: Object,
+                default: function(e) {
+                    return {}
+                }
+            }
+        },
+        components:{
+            uniSwipeAction,
+            uniSwipeActionItem,
+            item
+        },
+		filters: {
+			getLocalTime
+		},
+        data() {
+            return {
+                imgUrl: '/static/img/demo1.png',
+                options: [
+                    {
+                        text: '取消关注',
+                        style: {
+                            backgroundColor: '#dd524d'
+                        }
+                    }
+                ]
+            }
+        },
+        methods: {
+            cancelAttention(businessId, index) {
+                Api_GetAttentionAdd({businessId: businessId}).then(res => {
+					this.itemList2.splice(index, 1);
+                });
+            },
+            goDetail(businessId, index){
+                this.$parent.$parent.$parent.currentId =  businessId;
+                this.$parent.$parent.$parent.currentIndex =  index;
+                uni.navigateTo({
+                    url: '/pages/faq/faq/detail?id='+ businessId
+                });
+            }
+        }
+	}
+</script>
+
+<style>
+	/* #ifndef APP-PLUS */
+	page {
+		width: 100%;
+		min-height: 100%;
+		display: flex;
+	}
+	/* #endif */
+
+	.content {
+		flex: 1;
+		flex-direction: column;
+		overflow: hidden;
+		background-color: #ffffff;
+		/* #ifdef MP-ALIPAY || MP-BAIDU */
+		height: 100vh;
+		/* #endif */
+	}
+	page,
+	.content{
+		background-color: #f7f7f7;
+		height: 100%;
+		overflow: hidden;
+	}
+
+	/* 顶部tabbar */
+	.nav-bar{
+		position: relative;
+		z-index: 10;
+		height: 84rpx;
+		white-space: nowrap;
+		background-image: linear-gradient(to bottom,#d51e1e, #f85b2c);
+	}
+	.nav-item{
+		display: inline-block;
+		width: 250rpx;
+		height: 84rpx;
+		text-align: center;
+		line-height: 84rpx;
+		font-size: 30rpx;
+		color: #ffffff;
+		position: relative;
+	}
+	.nav-item:after{
+		content: '';
+		width: 0;
+		height: 0;
+		border-bottom: 4rpx solid #FFFFFF;
+		position: absolute;
+		left: 50%;
+		bottom: 0;
+		transform: translateX(-50%);
+		transition: .3s;
+	}
+	.current{
+		color: #ffffff;
+		font-size: 36rpx;
+
+	}
+	.current:after{
+		width: 50%;
+	}
+	.view {
+		flex-direction: column;
+	}
+	.flex-col {
+		flex-direction: column;
+	}
+	.flex-row {
+		flex-direction: row;
+	}
+
+	.swiper-box{
+		height: 100%;
+	}
+
+	.panel-scroll-box{
+		height: 100%;
+	}
+	.panel-item{
+		background: #fff;
+		padding: 30px 0;
+		border-bottom: 2px solid #000;
+	}
+
+	view{
+		display:flex;
+		flex-direction: column;
+	}
+	.idx-img {
+		width: 750rpx;
+		height: 78rpx;
+	}
+	.ans-btn,
+	.ask-btn {
+		width: 100rpx;
+		height: 100rpx;
+		position: fixed;
+		right: 0;
+		top: 480rpx;
+		z-index: 999;
+	}
+	.ans-btn:active,
+	.ask-btn:active {
+		opacity: .9;
+	}
+	view {
+		display: flex;
+	}
+	.view {
+		flex-direction: column;
+		background-color: #fff;
+	}
+
+	.flex-row {
+		flex-direction: row;
+	}
+
+	.flex-col {
+		flex-direction: column;
+	}
+
+	.list-cell {
+		padding: 0 30rpx;
+	}
+
+	.uni-list-cell-hover {
+		background-color: #eeeeee;
+	}
+
+	.media-item {
+		position: relative;
+		flex: 1;
+		flex-direction: column;
+		padding: 36rpx 20rpx 30rpx 20rpx;
+	}
+
+	.media-info-box {
+		flex: 1;
+	}
+
+	.media-title {
+		flex: 1;
+		font-size: 32rpx;
+		line-height: 44rpx;
+		color: #000000;
+	}
+
+	.media-title2 {
+		flex: 1;
+		lines: 2;
+		text-overflow: ellipsis;
+		margin-top: 6rpx;
+		line-height: 40rpx;
+	}
+
+	.media-title3 {
+		flex: 1;
+		lines: 3;
+		text-overflow: ellipsis;
+		line-height: 40rpx;
+	}
+
+	.media-con {
+		flex: 1;
+		font-size: 26rpx;
+		color: #555555;
+		margin-top: 16rpx;
+		line-height: 40rpx;
+		lines: 2;
+		text-overflow: ellipsis;
+	}
+
+	.media-con3 {
+		flex: 1;
+		lines: 3;
+		text-overflow: ellipsis;
+	}
+
+	.media-info {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.info-text {
+		margin-right: 20rpx;
+		color: #999999;
+		font-size: 24rpx;
+		line-height: normal;
+	}
+
+	.media-foot {
+		margin-top: 16rpx;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		color: #999999;
+		font-size: 24rpx;
+	}
+
+	.head-img {
+		width: 64rpx;
+		height: 64rpx;
+		margin-right: 10rpx;
+		border-radius: 200rpx;
+	}
+	.username {
+		font-size: 30rpx;
+		line-height: 40rpx;
+		color: #000;
+	}
+	.nickname {
+		font-size: 20rpx;
+		color: #999;
+		line-height: normal;
+	}
+	.img-row {
+		justify-content: space-between;
+		align-items: center;
+	}
+	.img {
+		width: 225rpx;
+		height: 142rpx;
+	}
+	.views {
+		align-items: center;
+	}
+
+	.views-num {
+		margin-left: 10rpx;
+		color: #a3a3a3;
+		font-size: 24rpx;
+	}
+	.imgIco {
+		height: 24rpx;
+		width: 26rpx;
+		margin-right: 10rpx;
+	}
+	.space-line {
+		background-color: #f7f7f7;
+		height: 20rpx;
+		width: 750rpx;
+	}
+</style>

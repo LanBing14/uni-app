@@ -1,0 +1,147 @@
+<template>
+	<view class="flex-row" style="align-items: center;">
+		<view class="flex-row" style="align-items: center;flex: 1;">
+			<image class="head-img" :src="userFocus.headPicUrl?userFocus.headPicUrl:imgUrl" mode="aspectFill" @click="goDetail(userFocus.id)"></image>
+			<view class="flex-col" style="flex: 1;" @click="goDetail(userFocus.id)">
+				<text class="name">{{userFocus.expertName}}</text>
+				<text class="intro">{{userFocus.expertTitle}}</text>
+			</view>
+		</view>			
+		<add-focus :focus-status="userFocus.status" :businessId="userFocus.id" :type="0"></add-focus>
+		<tip-box ref='tip' :info="tipInfo"></tip-box>
+	</view>
+</template>
+
+<script>
+	import {
+		Api_GetAttentionAdd,
+	} from '@/api/faq.js';
+	
+	import addFocus from '@/components/add-focus-btn.vue';
+    import tipBox from '@/components/tip.vue';
+    export default {
+        props: {
+            userFocus: {
+                type: Object,
+                default: function(e) {
+                    return {}
+                }
+            },
+			titleName: {
+				type: String,
+				default: ""
+			},
+            tipInfo:{type: 2, dialogVisible: false},
+        },
+		components: {
+			addFocus,
+            tipBox
+		},
+        filters: {
+            rebuildTitle: function (title) {
+                // 解决专家集头衔长度过长的问题
+                let maxLength = 15;
+                if (title.length > maxLength) {
+                    title = title.substring(0, maxLength) + '...';
+                }
+                return title;
+            }
+		},
+		created(){
+		},
+        data() {
+            return {
+                imgUrl: '/static/img/demo1.png'
+            }
+        },
+        methods: {
+            showTip() {
+                this.$refs.tip.show();
+            },
+            goDetail(id) {
+                uni.navigateTo({
+                    url: '/pages/specialist/specialist?expertId=' + id
+                });
+            },
+        }
+    }
+</script>
+
+<style scoped>
+	view {
+		display: flex;
+	}
+	.flex-col {
+		flex-direction: column;
+	}
+	.flex-row {
+		flex-direction: row;
+	}
+	.head-img {
+		width: 67rpx;
+		height: 67rpx;
+		margin-right: 20rpx;
+		justify-content: center;
+		align-items: center;
+		border-radius: 200rpx;
+	}
+	.head-img2 {
+		width: 94rpx;
+		height: 94rpx;
+	}
+	.name {
+		font-size: 30rpx;
+		color: #000;
+		lines: 1;
+		text-overflow: ellipsis;
+		width: 400rpx;
+	}
+	.zj-info-box {
+		flex: 1;
+		justify-content: center;
+	}
+	.utag {
+		lines: 2;
+		text-overflow: ellipsis;
+		font-size: 20rpx;
+		color: #999;
+		line-height: normal;
+	}
+	.itag {
+		font-size: 20rpx;
+		color: #ce0201;
+		text-align: center;
+		border-width: 2rpx;
+		border-color: #ce0201;
+		border-style: solid;
+		background-color: #fdf2f2;
+		padding: 0 10rpx;
+		margin-left: 10rpx;
+	}
+	.title-row {
+		flex-direction: row;
+		align-items: center;
+	}
+	.intro {
+		font-size: 24rpx;
+		color: #787878;
+		line-height: 34rpx;
+		lines: 2;
+		text-overflow: ellipsis;
+	}
+	/* 专栏页面样式 */
+	.title-inline {
+		flex-direction: column;
+		justify-content: center;
+	}
+	.title-inline-tag {
+		font-size: 24rpx;
+		color: #999999;
+		text-align: left;
+		border-width: 0;
+		background-color: #ffffff;
+		padding: 0;
+		margin-left: 0;
+		margin-top: 10rpx;
+	}
+</style>

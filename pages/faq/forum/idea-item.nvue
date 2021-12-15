@@ -1,0 +1,223 @@
+<template>
+	<view class="idea-panel">
+		<view class="panel-top">
+			<image class="user-img" :src="headUrl(value.headPicUrl)" mode=""></image>
+			<view class="user-desc">
+				<text class="user-name">{{ value.username }}</text>
+				<image src="@/static/img/ico-more.png" mode="aspectFill" class="ico-pb" @click="sendBlackInfo(value.username, value.userId)"></image>
+			</view>
+		</view>
+		<view class="panel-content" @click="ItemClick">
+			<text class="content-title">{{ value.ideaContent }}</text>
+		</view>
+		<view class="panel-img-list">
+			<image class="list-img" v-for="(item,index) in value.imgList" :key="index" v-if="index<3" @click="previewImage(index)" :src="item" mode="aspectFill" :class="{ 'no-margin': !((index+1)%3) }"></image>
+		</view>
+		<view class="user-tool">
+			<view class="tool-time">
+				<text class="praise-count">{{ value.publishDate | dateFormat('yyyy-MM-dd hh:mm:ss') }}</text>
+			</view>
+			<view class="tool-comment" @click="ItemClick">
+				<image class="comment-img" src="/static/img/faq/ico1.png" mode=""></image>
+				<text class="good-count">{{ value.commentCount || 0}}</text>
+			</view>
+			<view class="tool-good" @click="likeClick">
+				<image class="good-img" :src="value.likeStatus ? '/static/img/faq/ico2-1.png' : '/static/img/faq/ico2.png'" mode=""></image>
+				<text class="good-count">{{ value.likeCount || 0}}</text>
+			</view>
+		</view>
+		<view class="space-line"></view>
+	</view>
+</template>
+
+<script>
+	import {dateFormat} from '@/utils/index.js';
+    import * as utils from '@/utils/index.js';
+    import {
+        Api_GetLikeSave
+    } from '@/api/faq.js';
+
+	export default {
+		props: {
+		    value: Object,
+			default:function(){
+				return {}
+			}
+		},
+		filters:{
+			dateFormat
+		},
+		data() {
+			return {
+			}
+		},
+		mounted(){
+		},
+		methods: {
+			sendBlackInfo(name, userId){
+				this.$store.dispatch('saveUserMenu', true)
+				this.$store.dispatch('saveBlackInfo', {name:name, userId: userId})
+			},
+			headUrl(url){
+				return url ? url : '/static/img/demo1.png';
+			},
+			ItemClick() {
+				uni.navigateTo({
+					url: '/pages/faq/idea-detail?id=' + this.value.id
+				})
+			},
+            likeClick() {
+			    console.log(this.value)
+                utils.getUserInfo(true).then(user => {
+                    if (user.userId) {
+                        Api_GetLikeSave({
+                            userId: this.value.userId, //被回复人id（type=0需要填写）
+                            businessId: this.value.id, //业务表主键(关联各业务表id)
+                            businessType: 3, // 1:回答 2:文章 3:想法 ,
+                        }).then(res=>{
+                            this.value.likeCount = res.data;
+                            this.value.likeStatus = !this.value.likeStatus;
+                        })
+                    } else {
+                        uni.showToast({
+                            icon:'none',
+                            title: '请先登录',
+                            duration: 2000
+                        });
+                        setTimeout(function(){
+                            uni.navigateTo({
+                                url: '/pages/login/login'
+                            });
+                        }, 1000);
+					}
+                }).catch(err => {
+
+                    uni.showToast({
+                        icon: "none",
+                        title: err + "",
+                        mask: false,
+                        duration: 1500
+                    });
+                });
+            },
+			previewImage(idx) {
+				uni.previewImage({
+					current: idx,
+					urls: this.value.imgList
+				});
+			},
+		}
+	}
+</script>
+
+<style scoped>
+	.idea-panel{
+		 background-color: #ffffff;
+	}
+	.space-line {
+		background-color: #f7f7f7;
+		height: 20rpx;
+	}
+	.panel-top{
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-start;
+		padding: 24rpx 20rpx 0 20rpx;
+	}
+	.user-img{
+		width: 45rpx;
+		height: 45rpx;
+		margin-right: 16rpx;
+		border-radius: 200rpx;
+	}
+	.user-name{
+		color: #999999;
+		font-size: 26rpx;
+		lines: 1;
+		text-overflow: ellipsis;
+		width: 500rpx;
+	}
+	.panel-content{
+		padding: 16rpx 20rpx 10rpx;
+	}
+	.content-title{
+		font-size: 28rpx;
+		line-height: 44rpx;
+		color: #262626;
+		overflow: hidden;
+		lines: 3;
+		text-overflow: ellipsis;
+	}
+	.panel-img-list{
+		margin-top: 20rpx;
+		padding-left: 20rpx;
+		padding-right: 20rpx;
+		display: flex;
+		flex-direction: row;
+		align-items: flex-start;
+	}
+	.list-img{
+		width: 223rpx;
+		height: 140rpx;
+		margin-right: 20rpx;
+		border-radius: 10rpx;
+	}
+	.no-margin{
+		margin-right: 0rpx;
+	}
+	.idea-comment{
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		align-items: stretch;
+		justify-content: flex-start;
+	}
+	.user-tool {
+		flex: 1;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+		padding: 20rpx;
+	}
+	.tool-praise,
+	.tool-comment,
+	.tool-time,
+	.tool-good{
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
+	.tool-time{
+		flex: 1;
+	}
+
+	.praise-img,
+	.good-img,
+	.comment-img {
+		width: 26rpx;
+		height: 24rpx;
+		margin-right: 10rpx;
+		margin-left: 38rpx;
+	}
+	.praise-count {
+		font-size: 24rpx;
+		color: #999999;
+	}
+	.good-count{
+		font-size: 24rpx;
+		color: #999999;
+	}
+
+	.user-desc {
+		flex: 1;
+		flex-direction: row;
+		justify-content: space-between;
+	}
+
+	.ico-pb {
+		width: 35rpx;
+		height: 35rpx;
+	}
+</style>

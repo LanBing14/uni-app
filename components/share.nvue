@@ -1,0 +1,323 @@
+<template>
+	<view>
+		<!-- share弹窗 -->
+		<view id="share" class="share" v-if="showShare" :class="shareClass" @tap="hideShare" @click="show">
+			<view class="mask" @click="clickMask"></view>
+			<view class="layer">
+				<view class="h1-box">
+					<text class="h1">分享至</text>
+				</view>
+				<view class="list">
+					<view class="box" data-sharetype="weixin" data-sharescene="WXSceneSession" @click="appOAuthShare">
+						<view class="img-box">
+							<image class="box-image" src="/static/img/share/wx.png"></image>
+						</view>
+						<view class="txt-box">
+							<text class="title">微信好友</text>
+						</view>
+					</view>
+					<view class="box" data-sharetype="weixin" data-sharescene="WXSenceTimeline" @click="appOAuthShare">
+						<view class="img-box">
+							<image class="box-image" src="/static/img/share/pyq.png" mode="aspectFill"></image>
+						</view>
+						<view class="txt-box">
+							<text class="title">朋友圈</text>
+						</view>
+					</view>
+					<view class="box" data-sharetype="qq" @click="appOAuthShare">
+						<view class="img-box">
+							<image class="box-image" src="/static/img/share/qq.png" mode="aspectFill"></image>
+						</view>
+						<view class="txt-box">
+							<text class="title">QQ</text>
+						</view>
+					</view>
+					<view class="box" data-sharetype="sinaweibo" @click="appOAuthShare">
+						<view class="img-box">
+							<image class="box-image" src="/static/img/login/sina.png" mode="aspectFill"></image>
+						</view>
+						<view class="txt-box">
+							<text class="title">微博</text>
+						</view>						
+					</view>
+					<view class="box" @click="copyUrl">
+						<view class="img-box">
+							<image class="box-image" src="/static/img/share/copy.png" mode="aspectFill"></image>
+						</view>
+						<view class="txt-box">
+							<text class="title">复制链接</text>
+						</view>
+					</view>
+					<view class="box" v-if="info.businessId" @click="shareToFAQ">
+						<view class="img-box">
+							<image class="box-image" src="/static/img/share/yd.png" mode="aspectFill"></image>
+						</view>
+						<view class="txt-box">
+							<text class="title">分享到源点</text>
+						</view>
+					</view>
+				</view>
+			</view>
+
+		</view>
+
+	</view>
+</template>
+
+<script>
+	import Config from '@/api/apiUrl.js'
+	import { Api_AddShare } from "@/api/share.js";
+	import { Api_SaveScore } from "@/api/points.js";
+	import * as utils from "@/utils/index.js";
+	export default {
+		props: {
+			info: {
+			    type: Object,
+			    default: function(e) {
+			        return {
+						// title: '标题',(必填)
+						// summary: '描述内容',
+						// imageUrl: '图片地址', (可不传)
+						// href: '路由地址',（如果有参数，用 &参数名=参数值 拼接一下，例：/pages/user-center/user-center&id=111&name=222）
+						// type: '5', // 分享类型  分享类型  0:资讯 1:专栏文章 2:信用百科 3:著作 4:提问 5:回答 6:专家 7:想法'   (必填)
+						// businessId: '1' // 当前业务主键id(必填)
+					}
+			    }
+			}
+		},
+		data() {
+			return {
+				shareClass: '',
+				showShare: false
+			}
+		},
+		methods: {
+			// 分享
+			share(){
+				this.shareClass = 'show';
+				this.showShare = true;
+			},
+			hideShare(){
+			    this.$emit('click', true);
+				this.shareClass = 'hide';
+				this.showShare = false;
+				setTimeout(() => {
+					this.shareClass = 'none';
+				}, 150);
+			},
+			// 微信、QQ、微博的分享
+			appOAuthShare (e) {
+				var me = this;
+				// 1 获取用户的分享类型
+				var shareType = e.currentTarget.dataset.sharetype;
+				var scene = e.currentTarget.dataset.sharescene;
+				if (!scene) {
+					scene = null;
+				}
+				var type = 0;
+				const platform = uni.getSystemInfoSync().platform;
+				if (shareType == 'qq' && platform == 'android') {
+					type = 2;
+				}
+				// 链接
+                var href;
+                if (this.info.type === 0) {
+                    href = Config.shareNewsUrl;
+                } else if (this.info.type === 1) {
+                    href = Config.shareTopicUrl;
+                } else if (this.info.type === 2) {
+                    href = Config.shareEntryUrl;
+                } else if (this.info.type === 3) {
+                    href = Config.shareBookDetailUrl;
+                } else {
+                    href = Config.shareUrl;
+                }
+
+				if (this.info.href) {
+					href +=	this.info.href;
+				}
+				if (this.info.type) {
+					href +=	'&type=' + this.info.type;
+				}
+				// 标题
+				if (!this.info.title) {
+					this.info.title = '源点信用';
+				}
+				// if (this.info.title.length > 15) {
+					// this.info.title = this.info.title.substr(0, 12) + '...';
+				// }
+				// 描述
+				// if (this.info.summary && this.info.summary.length > 30) {
+					// this.info.summary = this.info.summary.substr(0, 27) + '...';
+				// }
+				// 图标
+				if (!this.info.imageUrl) {
+					this.info.imageUrl = '/static/img/res/icons/share.png';
+				}
+				if (shareType == 'sinaweibo') {
+					this.info.imageUrl = null;
+				}
+				// 2 授权分享，弹出分享窗口
+				uni.share({
+					provider: shareType,
+					scene: scene,
+					type: type,
+					href: href,
+					title:  this.info.title,
+					summary: this.info.summary ? this.info.summary : '',
+					imageUrl: this.info.imageUrl,
+					success: function (res) {
+
+					    // 判断用户是否登录
+                        utils.getUserInfo(true).then(user => {
+                            if (user.userId) {
+                                if (me.info.businessId) {
+                                    // 转发成功保存积分
+                                    Api_SaveScore({type: '5'}).then(data => {
+                                        if (data.statusCode === 1) {
+                                            setTimeout((e) => {
+                                                utils.showScore(data.data.score);
+                                            }, 1000);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+
+						me.hideShare();
+					},
+					fail: function (err) {
+						console.log("fail:" + JSON.stringify(err));
+					}
+				});
+			},
+			copyUrl() {
+				var me = this;
+				// 链接
+                var href;
+                if (this.info.type === 0) {
+                    href = Config.shareNewsUrl;
+                } else if (this.info.type === 1) {
+                    href = Config.shareTopicUrl;
+                } else if (this.info.type === 2) {
+                    href = Config.shareEntryUrl;
+                } else if (this.info.type === 3) {
+                    href = Config.shareBookDetailUrl;
+                } else {
+                    href = Config.shareUrl;
+                }
+
+				if (this.info.href) {
+					href +=	this.info.href;
+				}
+				if (this.info.type) {
+					href +=	'&type=' + this.info.type;
+				}
+				uni.setClipboardData({
+				    data: href,
+				    success: function () {
+						uni.showToast({
+							icon:'none',
+							title: '复制成功',
+							duration: 2000
+						});
+						me.hideShare();
+				    }
+				});
+			},
+			// 分享至大家谈，保存到分享表
+			shareToFAQ() {
+				var me = this;
+				var type = this.info.type;
+				var businessId = this.info.businessId;
+				Api_AddShare({shareType: type, businessId: businessId}).then(res => {
+					if (res.statusCode == '1') {
+						uni.showToast({
+							icon:'none',
+							title: '转发成功',
+							duration: 2000
+						});
+					} else if (res.statusCode == '2') {
+						uni.showToast({
+							icon:'none',
+							title: '同一内容不可转发多次',
+							duration: 2000
+						});
+					}
+					me.hideShare();
+				});
+			},
+			clickMask(){
+				this.$emit('click', true);
+			}
+		}
+	}
+</script>
+
+<style scoped>
+.share {
+	position: fixed;
+	width: 750rpx;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 998;
+	flex-direction: column;
+}
+.mask {
+	background-color: rgba(0, 0, 0, 0.5);
+	position: fixed;
+	width: 750rpx;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 998;
+}
+.layer {
+	width: 750rpx;
+	position: fixed;
+	z-index: 999;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ffffff;
+	border-top-left-radius: 20rpx;
+	border-top-right-radius: 20rpx;
+	flex-direction: column;
+}
+.list {
+	width: 750rpx;
+	padding: 10rpx 0 30rpx 0;
+	flex-wrap: wrap;
+	flex-direction: row;
+}
+.box {
+	width: 250rpx;
+	height: 140rpx;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+}
+.box-image {
+	width: 50rpx;
+	height: 50rpx;
+	margin-bottom: 20rpx;
+}
+.title {
+	font-size: 28rpx;
+}
+.h1-box {
+	width: 750rpx;
+	height: 80rpx;
+	justify-content: center;
+	align-items: center;
+	border-bottom-width: 1rpx;
+	border-bottom-color: #fafafa;
+	border-bottom-style: solid;
+}
+.h1 {
+	font-size: 34rpx;
+}
+</style>

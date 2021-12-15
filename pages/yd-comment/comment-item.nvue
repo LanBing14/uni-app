@@ -1,0 +1,337 @@
+<template>
+	<view class="idea-panel">
+		<view class="panel-top">
+			<image class="user-img" :src="userImgUrl(value.headPicUrl)" mode=""></image>
+			<view class="user-info">
+				<text class="user-name">{{ value.username }}</text>
+			</view>
+		</view>
+		<view class="panel-content comment-content pdT0 pdB0">
+			<!-- <text class="content-title" @click="itemClick"> -->
+			<text class="content-title" @click="commentAll">
+				{{ value.comment_content }}
+			</text>
+			<view class="content-comment" v-show="showReplay">
+				<uni-cell v-for="(item, index) in replayList" :key="index">
+					<view class="comment-item">
+						<text class="item-content">
+							<text class="item-user">{{ item.username }}</text>
+							{{ item.reply_content }}
+						</text>
+					</view>
+				</uni-cell>
+				<view class="comment-count" @click="commentAll">
+					<text>共 {{ value.replyCount || 0 }} 条回复 ></text>
+				</view>
+			</view>
+			<view class="user-tool">
+				<view class="tool-time">
+					<text class="praise-count">{{ value.publish_date | dateFormat('MM-dd hh:mm')}}</text>
+				</view>
+				<view class="tool-trash" v-if="userInfo.userId === value.user_id" @click="delComment(value.id)">
+					<uni-icons type="trash" size="12" color="#999999"></uni-icons>
+				</view>
+				<view class="tool-comment" @click.stop="commentClick">
+					<image class="comment-img" src="/static/img/faq/ico1.png" mode=""></image>
+					<text class="praise-count">{{ value.replyCount || 0 }}</text>
+				</view>
+				<view class="tool-praise" @click.stop="likeClick">
+					<image class="praise-img" src="/static/img/faq/ico2.png" mode=""></image>
+					<text class="praise-count">{{ value.likeCount.count || 0 }}</text>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		mapGetters
+	} from 'vuex'
+	import uniCell from '@/components/uni-cell.vue';
+
+	import {
+		Api_GetReplyPage,
+		Api_GetLikeSave,
+		Api_DelComment
+	} from '@/api/faq.js';
+	import {
+		dateFormat
+	} from '@/utils/index.js'
+	export default {
+		filters: {
+			dateFormat
+		},
+		components: {
+			uniCell
+		},
+		props: {
+			value: {
+				type: Object,
+				default: function() {
+					return {}
+				}
+			}
+		},
+		computed: {
+			...mapGetters([
+				'userInfo'
+			])
+		},
+		data() {
+			return {
+				showReplay: false,
+				replayList: [],
+			};
+		},
+		methods: {
+			// 删除评论
+			delComment(id) {
+				const _this = this;
+				uni.showModal({
+					title: '删除',
+					content: '是否删除当前评论？',
+					success: function(res) {
+						if (res.confirm) {
+							Api_DelComment({
+								id: id,
+								type: 1 // type 0：回复；1:评论
+							}).then(res => {
+								if (res.statusCode === 1) {
+									uni.showToast({
+										icon: 'none',
+										title: '删除成功',
+										duration: 2000
+									});
+									_this.$nextTick(function() {
+										_this.$emit('loadListData', true);
+									})
+								} else {
+									uni.showToast({
+										icon: 'none',
+										title: '删除失败',
+										duration: 2000
+									});
+								}
+							}).catch(err => {
+								console.log(err)
+							})
+						} else if (res.cancel) {
+							return
+						}
+					}
+				});
+			},
+			userImgUrl(url) {
+				return url ? url : '/static/img/demo1.png';
+			},
+			// 点击评论跳转至评论详情页
+			commentAll() {
+				uni.navigateTo({
+					url: '/pages/yd-comment/comment-detail?id=' + this.value.id
+				})
+			},
+			commentClick() {
+				this.$emit('coclick', this.value);
+			},
+			likeClick() {
+				Api_GetLikeSave({
+					businessId: this.value.id,
+					businessType: 0,
+					userId: this.value.user_id,
+				}).then(res => {
+					if (res.statusCode === 1) {
+                        this.value.likeCount.count = res.data;
+					}
+				})
+			}
+		}
+	}
+</script>
+
+<style scoped>
+	.list-cell {
+		padding: 0 30rpx;
+	}
+
+	.uni-list-cell-hover {
+		background-color: #eeeeee;
+	}
+
+	.pdT0 {
+		padding-top: 0 !important;
+	}
+
+	.pdB0 {
+		padding-bottom: 0 !important;
+	}
+
+	.idea-page {
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+	}
+
+	.space-line {
+		background-color: #f7f7f7;
+		height: 20rpx;
+		margin-top: 40rpx;
+	}
+
+	.top-share {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.panel-top {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-start;
+		padding: 24rpx 20rpx 0 20rpx;
+	}
+
+	.user-img {
+		width: 64rpx;
+		height: 64rpx;
+		margin-right: 16rpx;
+		border-radius: 200rpx;
+	}
+	
+	.user-info {
+		overflow: hidden;
+		width: 630rpx;
+		lines: 1;
+		text-overflow: ellipsis;
+	}
+
+	.user-name {
+		color: #999999;
+		line-height: 1.4;
+		font-size: 26rpx;
+		width: 630rpx;
+		overflow:hidden;  
+		white-space: nowrap;  
+		text-overflow:ellipsis;
+	}
+
+	.user-time {
+		color: #999999;
+		font-size: 24rpx;
+	}
+
+	.share-img {
+		width: 38rpx;
+		height: 39rpx;
+	}
+
+	.user-tool {
+		flex: 1;
+		margin: 10rpx 0;
+		padding-bottom: 10rpx;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+		border-bottom-style: solid;
+		border-bottom-color: #e2e2e2;
+		border-bottom-width: 1px;
+	}
+
+	.tool-trash,
+	.tool-praise,
+	.tool-comment,
+	.tool-time {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.tool-time {
+		flex: 1;
+	}
+
+	.praise-img,
+	.comment-img {
+		width: 26rpx;
+		height: 24rpx;
+		margin-right: 10rpx;
+		margin-left: 38rpx;
+	}
+
+	.tool-trash {
+		margin-left: 38rpx;
+	}
+
+	.praise-count {
+		font-size: 24rpx;
+		color: #999999;
+	}
+
+	.panel-content {
+		padding: 16rpx 20rpx 10rpx;
+	}
+
+	.content-title {
+		font-size: 28rpx;
+		color: #262626;
+	}
+
+	.comment-list {
+		flex: 1;
+		background-color: #f7f7f7;
+	}
+
+	.comment-content {
+		padding-left: 0;
+		padding-bottom: 18rpx;
+		margin-left: 100rpx;
+		line-height: 40rpx;
+	}
+
+	.content-comment {
+		margin-top: 20rpx;
+		padding: 15rpx 20rpx;
+		background-color: #f7f7f7;
+	}
+
+	.comment-item {
+		margin-bottom: 8rpx;
+	}
+
+	.item-user {
+		font-size: 24rpx;
+		color: #ce0201;
+		margin-right: 10rpx;
+	}
+
+	.item-content {
+		font-size: 24rpx;
+		color: #4b4b4b;
+		line-height: 1.5;
+	}
+
+	.comment-count {
+		font-size: 26rpx;
+		color: #ce0201;
+	}
+
+	.no-data {
+		text-align: center;
+	}
+
+	.no-data .data-img {
+		width: 489rpx;
+		height: 451rpx;
+		margin-top: 136rpx;
+		margin-bottom: 32rpx;
+	}
+
+	.no-data p {
+		font-size: 30rpx;
+		color: #999999;
+	}
+</style>

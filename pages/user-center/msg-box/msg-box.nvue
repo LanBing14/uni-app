@@ -1,0 +1,106 @@
+<template>
+	<view class="center">
+		<!-- 列表 -->
+		<view class="center-list">
+			<navigator url="./msg-list?messageType=1" open-type="navigate">
+				<view class="center-list-item border-bottom">
+					<text class="list-text">收到的评论</text>
+					<view class="yd-badge-box" v-if="num1 > 0">
+						<uni-badge type="error" :text="num1" size="small" class="yd-badge yd-badge-type1"></uni-badge>
+					</view>
+					<view class="navigat-arrow"><uni-icons type="arrowright" color="#bdbdbd"></uni-icons></view>
+				</view>
+			</navigator>
+			<navigator url="./msg-list?messageType=2" open-type="navigate">
+				<view class="center-list-item border-bottom">
+					<text class="list-text">收到的赞</text>
+					<view class="yd-badge-box" v-if="num2 > 0">
+						<uni-badge type="error" :text="num2" size="small" class="yd-badge yd-badge-type1"></uni-badge>
+					</view>
+					<view class="navigat-arrow"><uni-icons type="arrowright" color="#bdbdbd"></uni-icons></view>
+				</view>
+			</navigator>
+			<navigator url="./msg-list?messageType=0" open-type="navigate">
+				<view class="center-list-item">
+					<text class="list-text">系统消息</text>
+					<view class="yd-badge-box" v-if="num0 > 0">
+						<uni-badge type="error" :text="num0" size="small" class="yd-badge yd-badge-type1"></uni-badge>
+					</view>
+					<view class="navigat-arrow"><uni-icons type="arrowright" color="#bdbdbd"></uni-icons></view>
+				</view>
+			</navigator>
+		</view>
+	</view>
+</template>
+
+<script>
+	import { Api_GetMessageCount, Api_UpdateReadStatus } from '@/api/message.js'
+	export default {
+		data() {
+			return {
+				num1: 0,
+				num2: 0,
+				num0: 0,
+			};
+		},
+		onNavigationBarButtonTap(e) {
+			console.log(e)        
+			console.log("清除红点")       
+			this.cleanMsg();
+		},
+		onShow() {
+			this.getUnReadCount('0');
+			this.getUnReadCount('1');
+			this.getUnReadCount('2');
+		},
+		async onLoad() {
+			
+		},
+		methods: {
+			// 获取未读消息
+			getUnReadCount(messageType) {
+				Api_GetMessageCount({messageType: messageType, readStatus: '0'}).then(res => {
+					if (res.statusCode == '1') {
+						if (messageType == '0') {
+							this.num0 = res.data;
+						} else if (messageType == '1') {
+							this.num1 = res.data;
+						} else if (messageType == '2') {
+							this.num2 = res.data;
+						}
+					}
+				});
+			},
+			// 清除消息
+			cleanMsg: function() {
+				Api_UpdateReadStatus().then(res => {
+					if (res.statusCode == '1' && res.data) {
+						uni.showToast({
+							icon:'none',
+						    title: '消息已清除',
+						    duration: 2000
+						});
+						this.num1 = 0;
+						this.num2 = 0;
+						this.num0 = 0;
+					}
+				});
+			}
+		}
+	};
+</script>
+
+<style scoped>
+	@import '../../../common/css/uCenter/uCenter.css';
+
+	.yd-badge-box {
+		position: absolute;
+		left: 178rpx;
+	}
+	
+	.yd-badge {
+		background-color: #f8d9d9;
+		color: #ce0201;
+		border-radius: 10rpx;
+	}
+</style>

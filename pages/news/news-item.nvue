@@ -1,0 +1,213 @@
+<template>
+	<view class="media-item view" @click="goDetail(newsItem.id)">
+		<view class="view flex-row">
+			<!-- 新闻标题 -->
+			<view class="media-info-box">
+				<text class="media-title media-title2" :class="{'read-status': newsItem.readStatus}">{{newsItem.title}}</text>
+				<view class="media-foot flex-row">
+					<view class="media-info flex-row">
+						<text v-if="newsItem.tagList && newsItem.tagList.length > 0 && newsItem.tagList[0].tagName" class="info-text info-source">{{newsItem.tagList[0].tagName}}</text>
+						<text class="info-text">{{newsItem.releaseTime | friendlyDate}}</text>
+						<!-- <text class="info-text">{{newsItem.comment_count}}条评论</text> -->
+					</view>
+					<view class="flex-row views">
+						<uni-icons type="eye" color="#bdbdbd" size="13"></uni-icons>
+						<text class="views-num">{{newsItem.browseCount}}</text>
+					</view>
+				</view>
+			</view>
+
+			<view v-if="newsItem.titleImg.length>0" class="image-section flex-row image-section-right">
+				<image :fade-show="false" class="image-list2" :src="(newsItem.titleImg.length>0) ? (newsItem.titleImg[0].domain + '/' + newsItem.titleImg[0].url) : imgUrl" mode="aspectFill"></image>
+			</view>
+		</view>
+		<view class="media-item-line" style="position: absolute;"></view>
+	</view>
+</template>
+
+<script>
+	import {
+		friendlyDate
+	} from '@/common/js/util.js';
+
+    export default {
+        props: {
+            newsItem: {
+                type: Object,
+                default: function(e) {
+                    return {}
+                }
+            }
+        },
+		filters: {
+			friendlyDate
+		},
+		data(){
+			return {
+				imgUrl: '/static/img/demo2.png'
+			}
+		},
+        methods: {
+			goDetail(id){
+			    this.newsItem.readStatus = true;
+				this.browseCountAdd();
+
+				uni.navigateTo({
+					url: '/pages/details/details?id=' + id
+				});
+			},
+			browseCountAdd(){
+				this.newsItem.browseCount++;
+			}
+        }
+    }
+</script>
+
+<style scoped>
+    .view {
+        flex-direction: column;
+    }
+
+    .flex-row {
+        flex-direction: row;
+    }
+
+    .flex-col {
+        flex-direction: column;
+    }
+
+    .list-cell {
+        padding: 0 30rpx;
+    }
+
+    .uni-list-cell-hover {
+        background-color: #eeeeee;
+    }
+
+    .media-item {
+        position: relative;
+        flex: 1;
+        flex-direction: column;
+        padding: 20rpx 30rpx 21rpx 30rpx;
+		overflow: hidden;
+    }
+
+    .media-item-line {
+        position: absolute;
+        left: 30rpx;
+        right: 30rpx;
+        bottom: 0;
+        height: 1rpx;
+        background-color: #ebebeb;
+    }
+
+    .media-image-right {
+        flex-direction: row;
+    }
+
+    .media-image-left {
+        flex-direction: row-reverse;
+    }
+
+	.media-info-box {
+        flex: 1;
+		justify-content: space-between;
+	}
+
+    .media-title {
+        font-size: 32rpx;
+		line-height: 44rpx;
+        color: #000000;
+    }
+
+    .media-title2 {
+        lines: 2;
+        text-overflow: ellipsis;
+    }
+
+    .media-title3 {
+        lines: 3;
+        text-overflow: ellipsis;
+    }
+	
+	.read-status {
+		color: #999999;
+	}
+
+    .image-section {
+        margin-top: 20rpx;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .image-section-right {
+        margin-top: 0rpx;
+        margin-left: 20rpx;
+        width: 166rpx;
+        height: 166rpx;
+    }
+
+    .image-section-left {
+        margin-top: 0rpx;
+        margin-right: 20rpx;
+        width: 166rpx;
+        height: 166rpx;
+    }
+
+    .image-list1 {
+        width: 690rpx;
+        height: 481rpx;
+		border-radius: 10rpx;
+		overflow: hidden;
+    }
+
+    .image-list2 {
+        width: 166rpx;
+        height: 166rpx;
+		border-radius: 10rpx;
+		overflow: hidden;
+    }
+
+    .image-list3 {
+        width: 166rpx;
+        height: 166rpx;
+		border-radius: 10rpx;
+		overflow: hidden;
+    }
+
+    .media-info {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .info-text {
+        margin-right: 18rpx;
+        color: #999999;
+        font-size: 24rpx;
+    }
+
+	.info-source {
+		color: #ce0201;
+		border-width: 1rpx;
+		border-style: solid;
+		border-color: #ce0201;
+		border-radius: 10rpx;
+		padding: 6rpx 14rpx;
+	}
+
+    .media-foot {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+	.views {
+		align-items: center;
+	}
+
+	.views-num {
+		margin-left: 10rpx;
+		color: #a3a3a3;
+		font-size: 24rpx;
+	}
+</style>

@@ -1,0 +1,612 @@
+<template>
+	<view class="faq-page">
+		<uni-list class="scroll-v list" enableBackToTop="true" scroll-y loadmoreoffset="500" @loadmore="loadMore(index1)">
+			<uni-refresh class="refresh" @refresh="onrefresh(index1)" @pullingdown="onpullingdown" :display="newsList[0].refreshing ? 'show' : 'hide'">
+				<div class="refresh-view">
+					<image class="refresh-icon" :src="refreshIcon" :style="{width: (newsList[0].refreshing || pulling) ? 0: '30px'}" :class="{'refresh-icon-active': newsList[0].refreshFlag}"></image>
+					<loading-indicator class="loading-icon" animating="true" v-if="newsList[0].refreshing"></loading-indicator>
+					<text class="loading-text">{{newsList[0].refreshText}}</text>
+				</div>
+			</uni-refresh>
+
+			<!-- list -->
+			<uni-cell v-for="(topicItem, dindex) in newsList[0].data" :key="topicItem.id">
+				<!-- 文章 -->
+				<articles-item v-if="topicItem.category === '2'" v-model="newsList[0].data[dindex]"></articles-item>
+				<!-- 著作 -->
+				<book-item v-if="topicItem.category === '3'" v-model="newsList[0].data[dindex]"></book-item>
+				<!-- 问答 -->
+				<faq-item v-if="topicItem.category === '5'" v-model="newsList[0].data[dindex]"></faq-item>
+			 </uni-cell>
+			<!-- 暂无数据 -->
+			<uni-cell v-if="newsList[0].data.length == 0 && !newsList[0].isLoading">
+				<view class="no-data">
+					<view style="margin-bottom: 30rpx;">
+						<image src="/static/img/nodata.png" mode="aspectFill" class="no-data-img"></image>
+					</view>
+					<text v-if="!keyword" class="no-data-txt">输入关键词搜索"{{ experts.expertName }}"</text>
+					<text v-if="!keyword" class="no-data-txt">文章,著作和回答</text>
+					<text v-if="keyword" class="no-data-txt">没有找到" {{ keyword }} "相关内容</text>
+					<text v-if="keyword" class="no-data-txt">请换个关键字试试</text>
+				</view>
+			</uni-cell>
+
+			<uni-cell class="loading-more" v-if="newsList[0].isLoading || newsList[0].data.length > 10">
+				<text class="loading-more-text">{{newsList[0].loadingText}}</text>
+			</uni-cell>
+		</uni-list>
+	</view>
+</template>
+<script> 
+	import uniList from '@/components/uni-list.vue';
+	import uniCell from '@/components/uni-cell.vue';
+	import uniRefresh from '@/components/uni-refresh.vue';
+	import uniLoadMore from '@/components/uni-load-more.vue';
+	
+	import BookItem from './experts/book-item.nvue';
+	import ArticlesItem from './experts/articles-item.nvue';
+	import FaqItem from './experts/faq-item.nvue';
+	
+	import { Api_GoDetail } from '@/api/topic.js';
+	import { Api_GetSearchWithPage } from '@/api/search.js';
+
+    // 缓存每页最多
+    const MAX_CACHE_DATA = 100;
+    // 缓存页签数量
+    const MAX_CACHE_PAGE = 3;
+
+    export default {
+        components: {
+			uniList,
+			uniCell,
+			uniRefresh,
+			uniLoadMore,
+			BookItem,
+			ArticlesItem,
+			FaqItem,
+        },
+        data() {
+            return {
+				active: 0,
+                newsList: [],
+                cacheTab: [],
+				newsData:[],
+				expertsData:[],
+				articlesData:[],
+				faqData:[],
+				entryData:[],
+                tabIndex: 0,
+                tabList: [
+					{
+						id: '01',
+						name: '专家'
+					},
+				],
+                scrollInto: "",
+                showTips: false,
+                navigateFlag: false,
+                pulling: false,
+                refreshIcon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAB5QTFRFcHBw3Nzct7e39vb2ycnJioqK7e3tpqam29vb////D8oK7wAAAAp0Uk5T////////////ALLMLM8AAABxSURBVHja7JVBDoAgDASrjqj//7CJBi90iyYeOHTPMwmFZrHjYyyFYYUy1bwUZqtJIYVxhf1a6u0R7iUvWsCcrEtwJHp8MwMdvh2amHduiZD3rpWId9+BgPd7Cc2LIkPyqvlQvKxKBJ//Qwq/CacAAwDUv0a0YuKhzgAAAABJRU5ErkJggg==",
+				noDataCon: '',//输入关键词搜索 "'+ this.experts.name +'" 的<br/>文章,著作和回答'
+				experts:{}
+			}
+        },
+        props: {
+        	expid: {
+        		type: String,
+        		default: ''
+        	},
+        	keyword: String,
+        },
+		mounted() {
+			if(this.expid !== ''){
+				Api_GoDetail(this.expid).then(res=>{
+					if(res.statusCode === 1 && res.data){
+						this.experts = res.data;
+						
+						uni.setStorageSync('wd-un-flush', true);
+						this.tabList.forEach((tabBar, index) => {
+							this.newsList.push({
+								data: [],
+								bannerImgUrl: '/static/img/topic/b' + index + '.png',
+								isLoading: true,
+								refreshText: "",
+								loadingText: '',
+								requestParams: { // 参数信息
+									userId:this.experts.userId,
+									type: 5,
+									currentPage: 1,
+									pageSize: 10
+								},
+								totalPageNumber: 0, // 总页数
+								totalRecordNumber: 0, // 总数量
+							});
+						});
+						setTimeout(()=>{
+							this.getList(this.tabIndex, true);
+						}, 500);
+					}
+				});
+			}
+		},
+		onShow() {
+			// 从积分任务跳转过来时的判断，勿删！！！
+			if (uni.getStorageSync('tabBarIndex') || uni.getStorageSync('tabBarIndex') === 0) {
+				if (this.tabIndex !== uni.getStorageSync('tabBarIndex')) {
+					this.tabIndex = uni.getStorageSync('tabBarIndex');
+				}
+			}
+			this.getList(this.tabIndex, uni.getStorageSync('wd-un-flush'));
+		},
+		onHide() {
+			uni.removeStorageSync('tabBarIndex');
+		},
+		computed: {
+			indicatorLineLeft() {
+				return (125 - 48)/2 + this.tabIndex * 125 + 'rpx';
+			}
+		},
+		watch: {
+			// keyword(val) {
+			// 	setTimeout(()=>{
+			// 		this.getList(this.tabIndex, true);
+			// 	}, 500);
+			// },
+		},
+        methods: {
+			searchRefish(){
+				setTimeout(()=>{
+					this.getList(this.tabIndex, true);
+				}, 500);	
+			},
+		    getList(index, flush) {
+				let activeTab = this.newsList[index];
+				activeTab.requestParams.keyword = this.keyword;
+				// 刷新，从第一页查
+				if (flush) {
+					activeTab.requestParams.currentPage = 1;
+				}
+				Api_GetSearchWithPage(activeTab.requestParams).then(res => {
+					this.initData(res, activeTab);
+					activeTab.isLoading = false;
+				}).catch(err => {
+					activeTab.isLoading = false;
+				});
+            },
+			// 处理接口返回数据
+			initData(res, activeTab) {
+				if (res.statusCode === 1) {
+					activeTab.totalPageNumber = res.data.totalPageNumber;
+					activeTab.totalRecordNumber = res.data.totalRecordNumber;
+					let resData = res.data.data;
+					if (resData.length) {
+						if (activeTab.requestParams.currentPage <= 1) {
+							activeTab.data = resData;
+						} else {
+							activeTab.data = activeTab.data.concat(resData);
+						}
+					} else {
+						// 清空数据
+						activeTab.data = []
+					}
+				}
+			},
+            loadMore(e) {
+				if (this.newsList[this.tabIndex].requestParams.currentPage >= this.newsList[this.tabIndex].totalPageNumber) {
+					this.newsList[this.tabIndex].loadingText = '加载完毕';
+					return;
+				}
+                setTimeout(() => {
+					this.newsList[this.tabIndex].requestParams.currentPage ++;
+                    this.getList(this.tabIndex, false);
+                }, 500);
+            },
+            ontabtap(e) {
+				console.log(e)
+                let index = e.target.dataset.current || e.currentTarget.dataset.current;
+				
+				this.newsList[this.tabIndex].data = [];
+
+                this.switchTab(index);
+            },
+			sortType(type, e){
+				this.getList(this.tabIndex);
+			},
+            ontabchange(e) {
+                let index = e.target.current || e.detail.current;
+                this.switchTab(index);
+            },
+            switchTab(index) {
+                if (this.newsList[index].data.length === 0) {
+                    this.getList(index, true);
+                }
+
+                if (this.tabIndex === index) {
+                    return;
+                }
+                this.tabIndex = index;
+                this.scrollInto = this.tabList[index].id;
+            },
+            clearTabData(e) {
+                this.newsList[e].data.length = 0;
+                this.newsList[e].loadingText = "";
+            },
+            refreshData() {
+				setTimeout(()=>{
+					this.getList(this.tabIndex, true);
+				}, 500);
+			},
+            onrefresh(e) {
+                var tab = this.newsList[this.tabIndex];
+                if (!tab.refreshFlag) {
+                    return;
+                }
+                tab.refreshing = true;
+                tab.refreshText = "正在刷新...";
+
+                setTimeout(() => {
+                    this.refreshData();
+                    this.pulling = true;
+                    tab.refreshing = false;
+					tab.refreshFlag = false;
+                    tab.refreshText = "已刷新";
+                    setTimeout(() => { // TODO fix ios和Android 动画时间相反问题
+                        this.pulling = false;
+                    }, 500);
+                }, 2000);
+            },
+            onpullingdown(e) {
+                var tab = this.newsList[this.tabIndex];
+                if (tab.refreshing || this.pulling) {
+                    return;
+                }
+                if (Math.abs(e.pullingDistance) > Math.abs(e.viewHeight)) {
+                    tab.refreshFlag = true;
+                    tab.refreshText = "释放立即刷新";
+                } else {
+                    tab.refreshFlag = false;
+                    tab.refreshText = "下拉可以刷新";
+                }
+            }
+        }
+    }
+	
+	const promisify = api => {
+		return function(options, ...params) {
+			return new Promise(function(resolve, reject) {
+				api(
+					Object.assign({}, options, {
+						success: resolve,
+						fail: reject
+					}),
+					...params
+				);
+			});
+		};
+	};
+	const loaddata = function(options) {
+		let _self = options._self,
+			type = options.type,
+			success = options.success,
+			fail = options.fail;
+		Api_GetSearchWithPage({
+			type: type,
+			keyword:_self.keyword,
+			currentPage:1,
+			pageSize:3,
+		}).then(curPageData=>{
+			if (success) {
+				if(curPageData.data.data){
+					success(curPageData.data.data);
+				}else{
+					success([]);
+				}
+			}
+		}).catch((res)=>{
+			if (fail) {
+				fail(res);
+			}
+		})
+	};
+	
+</script>
+
+<style scoped>
+    /* #ifndef APP-PLUS */
+    page {
+        width: 100%;
+        min-height: 100%;
+        display: flex;
+    }
+
+    /* #endif */
+
+	.faq-page{
+		/* #ifndef APP-PLUS */
+		display: flex;
+		/* #endif */
+		flex: 1;
+		flex-direction: column;
+	}
+
+    .tabs {
+        flex: 1;
+        flex-direction: column;
+        overflow: hidden;
+        background-color: #ffffff;
+        /* #ifdef MP-ALIPAY || MP-BAIDU */
+        height: 100vh;
+        /* #endif */
+    }
+	.tab-title {
+		background-color: #f7f7f7;
+		width: 750rpx;
+		padding: 16rpx 22rpx;
+	}
+	.tab-title-text{
+		font-size: 30rpx;
+	}
+    .tab-bar {
+        width: 750rpx;
+        height: 90rpx;
+		background-image: linear-gradient(to bottom,#d51e1e, #f85b2c);
+        flex-direction: row;
+        /* #ifndef APP-PLUS */
+        white-space: nowrap;
+        /* #endif */
+    }
+
+    .line-h {
+		position: absolute;
+		bottom: 6px;
+        height: 6rpx;
+		width: 48rpx;
+		transition: left 0.3s;
+		background-image: linear-gradient(to right,#ffffff, rgba(255, 255, 255, 0.3));
+    }
+
+    .uni-tab-item {
+		/* #ifndef APP-PLUS */
+		display: inline-block;
+		/* #endif */
+		width: 125rpx;
+        flex-wrap: nowrap;
+		text-align: center;
+		align-items: center;
+		justify-content: center;
+    }
+
+    .uni-tab-item-title {
+        color: #fff;
+        font-size: 30rpx;
+        height: 90rpx;
+        line-height: 90rpx;
+        flex-wrap: nowrap;
+        /* #ifndef APP-PLUS */
+        white-space: nowrap;
+        /* #endif */
+		text-align: center;
+    }
+
+    .uni-tab-item-title-active {
+        color: #fff;
+		font-size: 36rpx;
+    }
+
+    .swiper-box {
+        flex: 1;
+    }
+
+    .swiper-item {
+        flex: 1;
+        flex-direction: row;
+    }
+
+    .scroll-v {
+        flex: 1;
+        /* #ifndef MP-ALIPAY */
+        flex-direction: column;
+        /* #endif */
+        width: 750rpx;
+    }
+	.add-btn{
+		position: fixed;
+		right: 0;
+		top: 480rpx;
+		z-index: 98;
+	}
+	.btn-img{
+		width: 100rpx;
+		height: 100rpx;
+	}
+	.add-btn:active{
+		opacity: .9;
+	}
+    .update-tips {
+        position: absolute;
+        left: 0;
+        top: 41px;
+        right: 0;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        background-color: #FDDD9B;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .update-tips-text {
+        font-size: 14px;
+        color: #ffffff;
+    }
+
+    .refresh {
+        width: 750rpx;
+        height: 64px;
+        justify-content: center;
+    }
+
+    .refresh-view {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+    }
+
+	.refresh-icon {
+		width: 30px;
+		height: 30px;
+		transition-duration: .5s;
+		transition-property: transform;
+		transform: rotate(0deg);
+		transform-origin: 15px 15px;
+	}
+
+	.refresh-icon-active {
+		transform: rotate(180deg);
+	}
+
+	.loading-icon {
+		width: 20px;
+		height: 20px;
+		margin-right: 5px;
+		color: #999999;
+	}
+
+    .loading-text {
+        margin-left: 2px;
+        font-size: 16px;
+        color: #999999;
+    }
+
+    .loading-more {
+        align-items: center;
+        justify-content: center;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        text-align: center;
+    }
+
+    .loading-more-text {
+        font-size: 28rpx;
+        color: #999;
+    }
+
+	.banner {
+		width: 750rpx;
+		height: 217rpx;
+		border-radius: 20rpx;
+		position: relative;
+	}
+	.img {
+		margin: 20rpx;
+		width: 710rpx;
+		height: 177rpx;
+	}
+	.zjj {
+		position: absolute;
+		right: 0;
+		top: 40rpx;
+		width: 99rpx;
+		height: 40rpx;
+		z-index: 999;
+	}
+	.tags {
+		display: flex;
+		padding-left: 20rpx;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 20rpx;
+	}
+	.ctag {
+		width: 80rpx;
+		height: 40rpx;
+		line-height: 40rpx;
+		margin-right: 13rpx;
+		background-color: #dfdfdf;
+		color: #5d5d5d;
+		text-align: center;
+		border-radius: 10rpx;
+		font-size: 24rpx;
+	}
+	.act {
+		background-color: #ce0201;
+		color: #ffffff;
+	}
+	.hot {
+		display: flex;
+		flex-direction: row;
+		padding: 0 20rpx 10rpx;
+	}
+	.txt {
+		color: #5d5d5d;
+		font-size: 28rpx;
+		padding: 6rpx;
+	}
+	.check {
+		color: #ce0201;
+	}
+	.idea-popup{
+		/* #ifndef APP-PLUS */
+		display: flex;
+		/* #endif */
+		flex: 1;
+	    z-index: 999;
+	}
+	.idea-form{
+		flex: 1;
+		/* #ifndef APP-PLUS */
+		display: flex;
+		/* #endif */
+		flex-direction: column;
+		height: 900rpx;
+		border-top-left-radius: 20rpx;
+		border-top-right-radius: 20rpx;
+		background-color: #fff;
+	}
+	.form-tool{
+		/* #ifndef APP-PLUS */
+		display: flex;
+		/* #endif */
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding: 25rpx 0 14rpx;
+		margin: 0 24rpx;
+		border-bottom-width: 1px;
+		border-bottom-color: #dddddd;
+		border-style: solid;
+	}
+	.tool-cancel{
+		font-size: 30rpx;
+		color: #999999;
+	}
+	.tool-publish{
+		font-size: 30rpx;
+		color: #333333;
+	}
+	.form-title{
+		font-size: 30rpx;
+	}
+	.form-desc{
+		font-size: 30rpx;
+		margin: 20rpx 24rpx;
+		width: 702rpx
+	}
+	.no-data {
+		width: 750rpx;
+		flex: 1;
+		justify-content: center;
+		align-items: center;
+	}
+	.no-data-img {
+		margin-top: 40rpx;
+		width: 462rpx;
+		height: 352rpx;
+	}
+	.no-data-txt {
+		text-align: center;
+		color: #999999;
+		font-size: 28rpx;
+	}
+</style>

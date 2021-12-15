@@ -1,0 +1,192 @@
+<template>
+	<view class="media-item view" @click="itemClick">
+		<view class="view">
+			<view class="media-info-box flex-col">
+				<text class="media-title" v-if="value.issueTitle">{{value.issueTitle}}</text>
+				<view class="flex-row" style="align-items: center;" v-if="value.answerContent">
+					<image :src="value.answerUserHeadPicUrl ? value.answerUserHeadPicUrl: imgUrl" mode="aspectFill" class="head-img"></image>
+					<text class="nickname">{{value.username}}</text>
+				</view>
+				<view v-else>尚未有人回答</view>
+				<view>
+					<text class="answerContent">{{value.answerContent}}</text>
+				</view>
+				<view class="media-foot flex-row">
+					<view class="media-info flex-row">
+						<text class="info-text">{{value.likeCount}}赞同 · </text>
+						<text class="info-text">{{value.commentCount}}条评论</text>
+					</view>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import {
+		friendlyDate
+	} from '@/common/js/util.js';
+
+    export default {
+        props: {
+			value: {
+				type: Object,
+				default: function(e) {
+				    return {}
+				}
+			}
+        },
+		filters: {
+			friendlyDate
+		},
+		data(){
+			return {
+				imgUrl: '/static/img/demo1.png'
+			}
+		},
+		methods: {
+            itemClick(){
+				uni.navigateTo({
+					url: `/pages/faq/faq/detail?id=`+ this.value.id
+				})
+			},
+        }
+    }
+</script>
+
+<style scoped>
+	view {
+		display: flex;
+	}
+    .view {
+        flex-direction: column;
+		background-color: #fff;
+		margin-bottom: 20rpx;
+    }
+
+    .flex-row {
+        flex-direction: row;
+    }
+
+    .flex-col {
+        flex-direction: column;
+    }
+
+	.answerContent {
+		text-overflow: -o-ellipsis-lastline;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+	}
+
+    .list-cell {
+        padding: 0 30rpx;
+    }
+
+    .uni-list-cell-hover {
+        background-color: #eeeeee;
+    }
+
+    .media-item {
+        position: relative;
+        flex: 1;
+        flex-direction: column;
+        padding: 35rpx 30rpx 15rpx 30rpx;
+    }
+
+	.media-info-box {
+        flex: 1;
+	}
+
+    .media-title {
+        flex: 1;
+        font-size: 30rpx;
+        color: #000000;
+    }
+
+    .media-title2 {
+        flex: 1;
+        lines: 2;
+        text-overflow: ellipsis;
+        margin-top: 6rpx;
+        line-height: 40rpx;
+    }
+
+    .media-title3 {
+        flex: 1;
+        lines: 3;
+        text-overflow: ellipsis;
+        margin-top: 6rpx;
+        line-height: 40rpx;
+    }
+
+	.media-con {
+        flex: 1;
+        font-size: 26rpx;
+        color: #555555;
+		margin-top: 16rpx;
+        line-height: 40rpx;
+        lines: 2;
+        text-overflow: ellipsis;
+    }
+
+    .media-con3 {
+        flex: 1;
+        lines: 3;
+        text-overflow: ellipsis;
+    }
+
+    .media-info {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .info-text {
+        margin-right: 20rpx;
+        color: #999999;
+        font-size: 24rpx;
+    }
+
+    .media-foot {
+        margin-top: 30rpx;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+	.head-img {
+		width: 36rpx;
+		height: 36rpx;
+		margin-right: 10rpx;
+		border-radius: 200rpx;
+	}
+
+	.nickname {
+		color: #999999;
+		font-size: 24rpx;
+	}
+	.img-row {
+		justify-content: space-between;
+		align-items: center;
+	}
+	.img {
+		width: 225rpx;
+		height: 142rpx;
+	}
+	.views {
+		align-items: center;
+	}
+
+	.views-num {
+		margin-left: 10rpx;
+		color: #a3a3a3;
+		font-size: 24rpx;
+	}
+	.imgIco {
+		height: 24rpx;
+		width: 26rpx;
+		margin-right: 10rpx;
+	}
+</style>

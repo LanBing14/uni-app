@@ -1,0 +1,237 @@
+<template>
+	<view class="idea-comment" :class="{setBottomPadding: commentCount == 0}">
+		<comment-tab v-model="tabIndex" :tabs="tabList" v-if="commentCount !== 0" style="margin-top: 20rpx;"></comment-tab>
+		<!--评论 -->
+		<comment-list v-show="commentCount !== 0" ref="commentlist" @coclick="listComItem" :i="0" v-model="detailItem" :index="tabIndex"></comment-list>
+		<!-- 评论工具条 -->
+		<comment-tool ref="commentTool" v-model="commentValue" @cclick="commentClick" @goClick="goComment" :option="toolOption" :baseInfo="detailItem" :shareInfo="shareInfo"></comment-tool>
+	</view>
+</template>
+
+<script>
+	import {mapGetters} from 'vuex'
+	import CommentTab from './comment-tab.nvue';
+	import CommentList from './comment-list.nvue';
+	import CommentTool from '@/pages/yd-comment-tool/comment-tool.nvue';
+	import {
+		Api_GeIdea,
+		Api_GetCommentSave,
+		Api_GetLikeSave
+	} from '@/api/faq.js';
+	export default {
+		components: {
+			CommentTab,
+			CommentList,
+			CommentTool
+		},
+		props: {
+			value: {
+				type: Object,
+				default () {
+					return {
+						id: '',
+						userId: '',
+						type: ''
+					}
+				}
+			},
+			toolOptions: {
+				type: Object,
+				default () {
+					return {
+						placeholder: '听君一席话，胜读十年书',
+						comment: true,
+						like: true,
+						share: true,
+						commentCount: 0,
+						likeCount: 0
+					}
+				}
+			},
+			shareInfo: {
+				type: Object,
+				default: function(e) {
+					return {}
+				}
+			}
+		},
+		data() {
+			return {
+				test: 'ces',
+				item: {},
+				detailItem: this.value,
+				tabList: [{
+					name: '评论',
+					count: 0
+				}],
+				toolOption: {
+					placeholder: '听君一席话，胜读十年书',
+					comment: true,
+					like: true,
+					share: true,
+					commentCount: 0,
+					likeCount: 0
+				},
+				tabIndex: 0,
+				businessId: '',
+				preIndex: 0, // 前一个菜单下标
+				navTop: null, // nav距离到顶部的距离 (如计算不准确,可直接写死某个值)
+				isShowSticky: true, // 是否悬浮
+				isComIdea: true,
+				isLikeIdea: true,
+				curComItem: {},
+				commentLoading: true,
+				commentValue: '',
+			};
+		},
+		mounted() {
+			// 配置评论组件栏的按钮显示哪些
+			this.toolOption = this.toolOptions;
+
+            // type    0:评论/回复 1:回答 2:文章 3:想法
+			let type = this.detailItem ? this.detailItem.type : '';
+            if (type === 3) {
+                this.toolOption.placeholder = '分享此刻想法'
+            }
+
+			// 根据id获取点赞数
+			this.$store.dispatch('getLikeStatus', this.value.id);
+			this.$store.dispatch('getCollection', this.value.id);
+		},
+		/* created() {
+			uni.$on('setAtUser', function(data){
+				console.log("@" + data)
+				this.commentValue = "@" + data + ":"
+			})
+		},
+		destroyed(){
+			uni.$off('setAtUser')
+		}, */
+		computed:{
+			...mapGetters([
+				'commentCount'
+			])
+		},
+		methods: {
+			goComment(){
+				this.$emit('dclick');
+			},
+			listComItem(curitem) {
+				this.isComIdea = false;
+				this.isLikeIdea = false;
+				this.toolOption.commentCount = curitem.replyCount;
+				this.toolOption.likeCount = curitem.likeCount.count;
+				this.curComItem = curitem;
+			},
+			commentClick() {
+				if (this.commentValue === '') {
+					uni.showToast({
+						icon: 'none',
+						title: '请输入评论内容',
+						duration: 2000
+					});
+					return false;
+				}
+				if (this.commentLoading) {
+					if (this.isComIdea) {
+						// 评论当前项
+						this.commentIdea();
+						this.$refs.commentTool.hideContactPop();
+					} else {
+						// 回复评论
+						this.commentUser(this.curComItem);
+						this.$refs.commentTool.hideContactPop();
+					}
+				}
+			},
+			commentIdea() {
+				this.goComment();
+				const _self = this;
+				Api_GetCommentSave({
+					businessId: _self.detailItem.id, //业务表主键(关联各业务表id) ,
+					businessType:  _self.detailItem.type, // 回答1 文章2 想法3
+					businessUserId: _self.detailItem.userId, //业务表创建的用户id（type = 1 的时候必填） ,
+					commentContent: _self.commentValue, //评论内容 ,
+					type: 1,
+				}).then(res => {
+					if (res.statusCode === 1) {
+						_self.commentValue = '';
+						_self.$refs.commentlist.loadListData(true);
+						this.$store.dispatch('addCommentCount')
+					} else if (res.statusCode === 3) {
+						uni.showToast({
+							icon:'none',
+							title: res.message,
+							duration: 2000
+						});
+					}
+				})
+			},
+			commentUser(comitem) {
+				const _self = this;
+				Api_GetCommentSave({
+					beUserId: comitem.user_id, //被回复人id（type=0需要填写） ,
+					businessId: comitem.id, //业务表主键(关联各业务表id) ,
+					businessType: 0, // 回答1 文章2 想法3
+					commentContent: this.commentValue, //评论内容 ,
+					type: 0, //0：回复；1:评论
+				}).then(res => {
+					if (res.statusCode === 1) {
+						_self.isComIdea = true;
+						_self.commentValue = '';
+						_self.$refs.commentlist.loadListData(true);
+						_self.$refs.commentlist.itemClick()
+					} else if (res.statusCode === 3) {
+						uni.showToast({
+							icon:'none',
+							title: res.message,
+							duration: 2000
+						});
+					}
+				})
+			},
+			likeClick() {
+				console.log(this.isLikeIdea);
+				return;
+				if (this.isLikeIdea) {
+					// 点赞当前项
+					this.likeIdea();
+				} else {
+					// 点赞回复
+					this.likeUser(this.curComItem);
+				}
+			},
+			likeIdea() {
+				Api_GetLikeSave({
+					businessId: this.businessId,
+					businessType: this.detailItem.type,
+				}).then(res => {
+					if (res.statusCode === 1) {
+						_self.$refs.commentlist.loadListData();
+					}
+				})
+			},
+			likeUser(comitem) {
+				Api_GetLikeSave({
+					businessId: comitem.id,
+					businessType: 0,
+				}).then(res => {
+					if (res.statusCode === 1) {
+						_self.isLikeIdea = true;
+						_self.$refs.commentlist.loadListData();
+					}
+				})
+			},
+		}
+	};
+</script>
+
+<style scoped>
+	.idea-comment {
+		flex: 1;
+		background-color: #fff;
+	}
+	.setBottomPadding {
+		padding-bottom: 98rpx;
+	}
+</style>

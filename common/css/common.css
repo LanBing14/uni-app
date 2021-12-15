@@ -1,0 +1,63 @@
+.flex {
+	display: flex;
+}
+
+.flex-row {
+	flex-direction: row;
+}
+
+.flex-col {
+	flex-direction: column;
+}
+
+.justify-center {
+	justify-content: center;
+}
+
+.justify-between {
+	justify-content: space-between;
+}
+
+.text-center {
+	text-align: center;
+}
+
+/* 定义公共按钮样式
+ */
+.yd-btn {
+	border-width: 0;
+	width: 568rpx;
+}
+
+.yd-btn-type1 {
+	color: #fff;
+	background-image: linear-gradient(to right,#d51e1e, #f85b2c);
+	box-shadow: 0 0 8px #eebbba;
+}
+
+.border-bottom {
+	border-bottom-width: 2rpx;
+	border-color: #f3f3f3;
+	border-bottom-style: solid;
+}
+
+/* 修改进度条颜色 */
+.uni-progress-inner-bar {
+	background-image: linear-gradient(to right,#cf0402, #f85b2c);
+}
+
+/* page */
+.uni-page-head{
+	padding:35rpx;
+	text-align: center;
+}
+.uni-page-head-title {
+	padding: 0 40rpx;
+	font-size: 30rpx;
+	height: 88rpx;
+	line-height: 88rpx;
+	color: #BEBEBE;
+	border-bottom-width: 2rpx;
+	border-bottom-style: solid;
+	border-bottom-color: #D8D8D8;
+}
